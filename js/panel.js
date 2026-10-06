@@ -37,7 +37,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   const xappLink = root.querySelector("[data-xapp-link]");
   const xappStatus = root.querySelector("[data-xapp-status]");
   // After a screen submits, the xApp shell shows an empty "nothing to do" page until the flow sends something new. The
-  // page covers it with a status line instead (for the upload screen: "reading your declaration page"); a new screen
+  // page covers it with a status line instead (for the upload screen: "reading your document"); a new screen
   // from the flow, or the flow closing the card, clears it.
   let xappStatusFor = null;
   let xappSlowTimer = null;

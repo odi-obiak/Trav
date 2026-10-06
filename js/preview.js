@@ -1,11 +1,11 @@
 // PLACEHOLDER conversation for ?preview=1, so the layout can be reviewed without a live flow.
 // Names, vehicles, dates and the claim are invented; AISA's wording is illustrative, not approved copy.
-// It walks the story beats: name and address, dec page extraction, a vehicle added mid-conversation (Step 5),
+// It walks the story beats: name and address, document extraction, a vehicle added mid-conversation (Step 5),
 // a switch to voice (Step 7), drivers, and one glass claim (Step 6).
 export const PREVIEW_SCRIPT = [
   {
-    bot: "Hi, I'm AISA, Travelers' AI assistant. I'll put your auto quote together with you. If you have your current declaration page, you can upload it and I'll only ask what's missing. First, what's your full name?",
-    choices: [{ title: "Upload my declaration page", payload: "upload" }],
+    bot: "Hi, I'm AISA, Travelers' AI assistant. I'll put your auto quote together with you. If you have any auto insurance documents handy, like a declaration page, driver's license, or insurance card, you can upload them and I'll only ask what's missing. First, what's your full name?",
+    choices: [{ title: "Upload a document", payload: "upload" }],
     ui: { section: "client", progress: { done: 0, total: 24 } },
   },
   { user: "Alex Smith", wait: 1400 },
@@ -24,10 +24,10 @@ export const PREVIEW_SCRIPT = [
       { key: "client.state", label: "State", value: "CT", source: "customer" },
       { key: "client.zip", label: "ZIP", value: "06105", source: "customer", confirmed: false },
     ] },
-    bot: "Got it, I've put that in your quote on the right so you can check it. Do you have your declaration page handy?",
+    bot: "Got it, I've put that in your quote on the right so you can check it. Do you have any auto documents handy, like a declaration page or driver's license?",
   },
   { user: "Yes, here's a photo of it.", wait: 1400 },
-  { note: "Declaration page received (photo). Reading it now." },
+  { note: "Document received (photo). Reading it now." },
   {
     wait: 2200,
     ui: {
@@ -48,9 +48,9 @@ export const PREVIEW_SCRIPT = [
       ],
       // PLACEHOLDER counts and wording (real ones come from the flow's rules.copy).
       efficiency: { total: 31, asked: 6, filled: 11, fromDoc: 9, fromRecords: 1, fromAnswers: 1, chip: "11 filled for you",
-        line: "AISA filled in 11 of 31 answers, so you only answered 6.", detail: "9 from your declaration page, 1 from records, 1 reused from your earlier answers." },
+        line: "AISA filled in 11 of 31 answers, so you only answered 6.", detail: "9 from your document, 1 from records, 1 reused from your earlier answers." },
     },
-    bot: "Thanks. Your declaration page shows a 2021 Ford Escape, with you and Jane Smith as drivers. I've filled those in, so I won't ask for them again.",
+    bot: "Thanks. Your document shows a 2021 Ford Escape, with you and Jane Smith as drivers. I've filled those in, so I won't ask for them again.",
   },
   { user: "Oh, I also just bought a 2024 Toyota RAV4 last week. Can we add that?", wait: 1800 },
   {
@@ -82,7 +82,7 @@ export const PREVIEW_SCRIPT = [
       { key: "driver[0].sr22", label: "Does this driver require an SR-22?", value: "No", source: "customer" },
       { key: "driver[0].primaryVehicle", label: "Which vehicle do you drive most often?", value: "2021 Ford Escape", source: "customer" },
     ] },
-    bot: "Got it. Your declaration page lists Jane as your spouse. What's her date of birth, and does she need an SR-22?",
+    bot: "Got it. Your document lists Jane as your spouse. What's her date of birth, and does she need an SR-22?",
   },
   { user: "January 1st, 1981. No SR-22.", via: "voice", wait: 1800 },
   {

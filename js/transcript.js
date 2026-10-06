@@ -30,7 +30,7 @@ export function createTranscript(root, { onChoice }) {
       const bubble = el("div", { class: `msg msg-${from}` },
         el("div", { class: "msg-who" }, badge, who, tag),
         text ? el("p", { class: "msg-text" }, text) : null,
-        image ? el("img", { class: "msg-image", src: image, alt: "Your declaration page" }) : null);
+        image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
       if (choices.length) {
         lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Suggested replies" },
@@ -46,7 +46,7 @@ export function createTranscript(root, { onChoice }) {
       }
       scroll();
     },
-    // Buttons with no bubble, e.g. "Attach declaration page" when AISA asks for the document.
+    // Buttons with no bubble, e.g. "Share document" when AISA asks for a file.
     actions(choices) {
       clearChoices();
       lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Actions" },

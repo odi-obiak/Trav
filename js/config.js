@@ -24,6 +24,6 @@ export const CONFIG = {
   screenAwareness: true,
 
   firstChatMessage: "I'd like to start an auto quote",
-  uploadText: "I'd like to share my declaration page",
+  uploadText: "I'd like to share a document",
   liveAgentText: "I'd like to talk to a person",
 };

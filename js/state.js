@@ -4,14 +4,14 @@ import { STEP_IDS, stepIdForKey } from "./questions.js";
 
 export const SOURCES = {
   customer: "You told us",
-  extracted: "From your declaration page",
+  extracted: "From your document",
   prefilled: "From our records",
   derived: "From your answers", // e.g. driver 1 name and DOB copied from the applicant
 };
 // Short tags for the panel (the long wording above is the tooltip and the screen reader label).
 export const SOURCES_SHORT = {
   customer: "You",
-  extracted: "Dec page",
+  extracted: "Document",
   prefilled: "Records",
   derived: "Same as you",
 };

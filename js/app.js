@@ -295,7 +295,7 @@ window.addEventListener("message", (event) => {
     // flow closes the card once the page is read (or found unreadable), which clears this.
     if (m.status === "uploaded") {
       panel.showXappStatus({
-        text: "Got it. AISA is reading your declaration page…",
+        text: "Got it. AISA is reading your document…",
         slowText: "This is taking longer than usual. You can keep going with AISA in the meantime.",
       });
     }
