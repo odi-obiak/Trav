@@ -167,7 +167,9 @@ async function startVoice(fromChat) {
     store.set({ channel: "voice" });
     transcript.note(fromChat ? "Switching to voice. Allow the microphone if your browser asks." : "Starting a voice conversation in your browser. Allow the microphone if asked.");
     // Step 7: the quote state plus the last few turns, so AISA knows what was just said, not only what was saved.
-    await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null, handoff: fromChat ? store.get().handoff || null : null, recent: fromChat ? transcript.recent() : null });
+    const handoff = fromChat ? store.get().handoff || null : null;
+    if (fromChat) console.warn("[aisa-diag] startVoice handoff:", handoff ? "present (v=" + handoff.v + ", quoteId=" + handoff.quoteId + ", updatedAt=" + handoff?.aisa?.updatedAt + ", aisa keys=" + Object.keys(handoff.aisa || {}).join(",").slice(0, 200) + ")" : "NULL — store has no handoff from chat");
+    await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null, handoff, recent: fromChat ? transcript.recent() : null });
   } catch (err) {
     stopClock();
     pendingSwitchFromChat = false;

@@ -54,6 +54,22 @@ export const STEPS = [
       { key: "commuteDays", label: "How many days a week do you commute?", type: "select", options: ["1", "2", "3", "4", "5", "6", "7"], required: true, sheet: "vehicleDetails" },
       { key: "annualMiles", label: "How many miles is this vehicle driven each year?", type: "tel", required: true, maxLength: 6, sheet: "vehicleDetails" },
       { key: "garagingZip", label: "ZIP code where vehicle is kept", type: "tel", required: true, maxLength: 5, sheet: "vehicleDetails" },
+      { key: "originalOwner", label: "Are you the original owner?", type: "radio", options: YES_NO, sheet: "vehicleDetails",
+        showIf: (v) => v("ownership") === "Financed" || v("ownership") === "Leased" },
+      { key: "loanLeaseGap", label: "Loan or lease gap coverage?", type: "select", options: ["Yes", "No", "Not sure"], sheet: "vehicleDetails",
+        showIf: (v) => v("originalOwner") === "Yes" },
+      { key: "collision", label: "Collision coverage?", type: "select", options: ["Yes", "No", "Not sure"], sheet: "vehicleDetails",
+        showIf: (v) => v("ownership") !== "Financed" && v("ownership") !== "Leased" },
+      { key: "comprehensive", label: "Comprehensive coverage?", type: "select", options: ["Yes", "No", "Not sure"], sheet: "vehicleDetails",
+        showIf: (v) => v("collision") === "Yes" },
+      { key: "costNew", label: "Approximate cost when new?", type: "select", sheet: "vehicleDetails",
+        options: ["Under $15,000", "$15,000 - $25,000", "$25,000 - $35,000", "$35,000 - $50,000", "$50,000 - $75,000", "Over $75,000"] },
+      { key: "ownershipDuration", label: "How long have you owned this vehicle?", type: "select", sheet: "vehicleDetails",
+        options: ["Less than 1 year", "1-2 years", "3-5 years", "6-10 years", "More than 10 years"] },
+      { key: "purchasedIn90Days", label: "Purchased in the last 90 days?", type: "radio", options: YES_NO, sheet: "vehicleDetails" },
+      { key: "AEB", label: "Automatic emergency braking?", type: "radio", options: YES_NO, sheet: "vehicleDetails" },
+      { key: "antiTheft", label: "Anti-theft device?", type: "select", sheet: "vehicleDetails",
+        options: ["None", "Alarm", "Active Tracking", "Passive Tracking", "Vehicle Recovery System", "Other"] },
     ],
   },
   {
@@ -69,19 +85,16 @@ export const STEPS = [
       { key: "dob", label: "Date of Birth", type: "tel", placeholder: "MM/DD/YYYY", required: true, sheet: "driverDetails" },
       { key: "licenseStatus", label: "Current License Status", type: "select", required: true, sheet: "driverDetails",
         options: ["Valid U.S. License", "Valid Canadian License", "Valid Foreign License", "Not Licensed", "Suspended/Revoked License", "Valid Permit"] },
-      { key: "ageFirstLicensed", label: "Age first licensed in the U.S. or Canada?", type: "tel", maxLength: 2, src: "wireframe" },
       { key: "relationship", label: "Relationship to You", type: "select", required: true, sheet: "driverDetails",
         options: ["Spouse", "Child", "Relative", "Domestic Partner", "Other"], showIf: (_v, i) => i > 0 },
       { key: "maritalStatus", label: "Marital Status", type: "select", required: true, sheet: "driverDetails",
         options: ["Single", "Married", "Civil Union/Domestic Partner", "Divorced", "Widowed", "Separated"] },
       { key: "residenceType", label: "Residence Type", type: "select", required: true, sheet: "driverDetails",
         options: ["Own Home", "Own Condo", "Own Mobile Home", "Rent", "Other"], showIf: (_v, i) => i === 0 },
-      { key: "sr22", label: "Does this driver require an SR-22?", type: "radio", options: YES_NO, src: "wireframe" },
       { key: "primaryVehicle", label: "Which vehicle do you drive most often?", type: "vehicle", required: true, sheet: "driverAssignment" },
-      // REVIEW: Occupation is required in the web set, but the Homeowners agent was flagged on 2026-09-30 for asking
-      // occupation unprompted. Confirm with Travelers whether AISA auto asks it before the flow collects it.
-      { key: "occupation", label: "Occupation", type: "select", required: true, sheet: "driverDetails",
-        options: ["Skilled", "Semi-Skilled Trade", "Homemaker", "Military", "Office", "Sales", "Professional Manager", "Retired", "Student", "Unemployed"] },
+      { key: "studentABAverage", label: "Student with B average or better?", type: "radio", options: YES_NO, sheet: "driverDetails" },
+      { key: "driverTraining", label: "Completed a driver training course?", type: "radio", options: YES_NO, sheet: "driverDetails" },
+      { key: "awayFromHome", label: "Away from home (school or military)?", type: "radio", options: YES_NO, sheet: "driverDetails" },
     ],
   },
   {
@@ -117,8 +130,13 @@ export const STEPS = [
       // Options are months in the sheet (5 to 60); shown as entered until Travelers confirms display labels.
       { key: "monthsWithCarrier", label: "How long have you been with them? (months)", type: "select", options: ["5", "6", "12", "24", "36", "48", "60"], required: true, sheet: "morequestions",
         showIf: (v) => v("currentlyInsured") !== "No" },
-      { key: "priorLiabilityLimit", label: "Which bodily injury limit is closest to your current coverage?", type: "text", required: true, sheet: "morequestions",
+      { key: "priorLiabilityLimit", label: "Which bodily injury limit is closest to your current coverage?", type: "select", sheet: "morequestions",
+        options: ["State Minimum", "25/50", "50/100", "100/300", "250/500", "500/500", "Not sure"],
         showIf: (v) => v("currentlyInsured") !== "No" },
+      { key: "currentPolicies", label: "Which Travelers policies do you have?", type: "text", sheet: "currentpolicies",
+        showIf: (v) => v("currentCustomer") === "Yes" },
+      { key: "purchasedFromIndependentAgent", label: "Purchased from an independent agent?", type: "radio", options: YES_NO, sheet: "currentpolicies",
+        showIf: (v) => v("currentCustomer") === "Yes" },
     ],
   },
   { id: "review", title: "Review", summary: true },
@@ -143,7 +161,12 @@ export function fieldKey(step, entityIndex, fieldKeyName) {
 }
 
 // Keys the flow can send that no step's form asks for (prefill, document, applicant fields asked by AISA).
-const EXTRA_LABELS = { vin: "VIN", dob: "Date of Birth", maritalStatus: "Marital Status", relationship: "Relationship to You" };
+const EXTRA_LABELS = { vin: "VIN", dob: "Date of Birth", maritalStatus: "Marital Status", relationship: "Relationship to You",
+  antiLockBrakes: "Anti-Lock Brakes", travelink: "Travelink Program", excessElectronics: "Excess Electronics",
+  excessElectronicsValue: "Excess Electronics Value", electronics: "Electronic Equipment", electronicsValue: "Electronics Value",
+  outOfState: "Kept Out of State", outOfStateMilitary: "Out of State (Military/School)",
+  currentPolicies: "Current Travelers Policies", purchasedFromIndependentAgent: "Purchased from Independent Agent",
+  currentCustomer: "Current Travelers Customer" };
 
 export function labelForKey(key) {
   const step = STEPS.find((s) => s.prefix === key.split(/[.[]/)[0]);
