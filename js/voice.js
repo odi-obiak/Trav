@@ -43,14 +43,10 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
         debug("voice SIP INFO size", json.length, "bytes");
         if (json.length > 8000) console.warn("[aisa-diag] SIP INFO payload is", json.length, "bytes — may exceed Voice Gateway limits and be dropped");
         try {
-          await client.sendInfo("aisa_entry", { aisa_entry_json: json });
+          await client.sendInfo("", { aisa_entry_json: json });
         } catch (err) {
           debug("voice entry not sent", err);
         }
-        setTimeout(async () => {
-          if (!inCall) return;
-          try { await client.sendInfo("aisa_entry", { aisa_entry_json: json }); } catch {}
-        }, 2000);
       }
       entrySent = true;
       onReady?.();
