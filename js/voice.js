@@ -36,15 +36,21 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
       inCall = true;
       onStatus("live");
       if (pendingEntry) {
-        debug("voice out", pendingEntry);
+        const compact = { ...pendingEntry };
+        if (compact.recent && compact.recent.length > 6) compact.recent = compact.recent.slice(-6);
+        debug("voice out", compact);
+        const json = JSON.stringify(compact);
+        debug("voice SIP INFO size", json.length, "bytes");
+        if (json.length > 8000) console.warn("[aisa-diag] SIP INFO payload is", json.length, "bytes — may exceed Voice Gateway limits and be dropped");
         try {
-          // Sent as one JSON string: Voice Gateway rewrites SIP INFO data keys to snake_case and drops dots
-          // ("quoteId" -> "quote_id", "client.firstName" -> "client_firstname"), which breaks the quote handoff.
-          // String values pass through unchanged (seen in the flow logs, 2026-10-01).
-          await client.sendInfo("", { aisa_entry_json: JSON.stringify(pendingEntry) });
+          await client.sendInfo("aisa_entry", { aisa_entry_json: json });
         } catch (err) {
           debug("voice entry not sent", err);
         }
+        setTimeout(async () => {
+          if (!inCall) return;
+          try { await client.sendInfo("aisa_entry", { aisa_entry_json: json }); } catch {}
+        }, 2000);
       }
       entrySent = true;
       onReady?.();
@@ -63,12 +69,14 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
         : info?.request?.body !== undefined ? info.request.body
         : ev?.body;
       debug("voice in", typeof body, typeof body === "string" ? body.slice(0, 200) : body);
+      console.log("[aisa-diag] infoReceived:", typeof body, typeof body === "string" ? body.slice(0, 300) : JSON.stringify(body)?.slice(0, 300));
       const ui = extractUi(body);
       if (ui) {
         debug("voice ui applied", Object.keys(ui));
+        console.log("[aisa-diag] voice ui applied, keys:", Object.keys(ui).join(", "), ui.xappUrl ? "xappUrl=" + ui.xappUrl.slice(0, 80) : "(no xappUrl)");
         onUi(ui);
       } else {
-        debug("voice ui not found in body");
+        console.warn("[aisa-diag] voice ui NOT found in infoReceived body — panel won't update this turn");
       }
     });
     const finish = (_session, endInfo) => {
