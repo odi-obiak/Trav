@@ -86,29 +86,33 @@ export function createStore() {
   };
 }
 
-// Accepts the shapes Cognigy may deliver: bare object, JSON string, {data}, {body}, {info:{body}}.
+// Accepts the shapes Cognigy may deliver: bare object, JSON string, wrapped in data/payload/body/info.
+// Voice Gateway wraps SIP INFO payloads unpredictably (data, payload, or double-data per the tutorials),
+// so this uses a recursive search matching turn_router.js's find() pattern rather than a fixed chain.
 export function extractUi(raw) {
-  let value = raw;
-  for (let i = 0; i < 4 && value != null; i++) {
-    if (typeof value === "string") {
-      try {
-        value = JSON.parse(value);
-      } catch {
-        return null;
-      }
-      continue;
+  return findAisaUi(raw, 5);
+}
+
+function findAisaUi(value, depth) {
+  if (value == null || depth < 0) return null;
+  if (typeof value === "string") {
+    if (value.length > 200000 || value.indexOf("aisa_ui") < 0) return null;
+    try { return findAisaUi(JSON.parse(value), depth); } catch { return null; }
+  }
+  if (typeof value !== "object") return null;
+  if (value.aisa_ui !== undefined && value.aisa_ui !== null) {
+    const v = value.aisa_ui;
+    if (typeof v === "object") return v;
+    if (typeof v === "string") {
+      try { return JSON.parse(v); } catch { return null; }
     }
-    if (typeof value !== "object") return null;
-    if (value.aisa_ui) {
-      // Send Metadata with "{{JSON.stringify(...)}}" delivers aisa_ui as a JSON string.
-      if (typeof value.aisa_ui !== "string") return value.aisa_ui;
-      try {
-        return JSON.parse(value.aisa_ui);
-      } catch {
-        return null;
-      }
+    return null;
+  }
+  for (const k of ["data", "payload", "body", "info"]) {
+    if (value[k] != null) {
+      const hit = findAisaUi(value[k], depth - 1);
+      if (hit) return hit;
     }
-    value = value.data ?? value.body ?? value.info?.body ?? null;
   }
   return null;
 }

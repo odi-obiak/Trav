@@ -56,9 +56,20 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
       }
     });
     client.on("infoReceived", (ev) => {
-      debug("voice in", ev?.info?.body);
-      const ui = extractUi(ev?.info?.body);
-      if (ui) onUi(ui);
+      // The SDK docs say {originator, info: {body: string}}, but the Click To Call tutorials
+      // defensively check ev.info.body, ev.info.request.body and ev.body. Match that.
+      const info = ev?.info || ev;
+      const body = info?.body !== undefined ? info.body
+        : info?.request?.body !== undefined ? info.request.body
+        : ev?.body;
+      debug("voice in", typeof body, typeof body === "string" ? body.slice(0, 200) : body);
+      const ui = extractUi(body);
+      if (ui) {
+        debug("voice ui applied", Object.keys(ui));
+        onUi(ui);
+      } else {
+        debug("voice ui not found in body");
+      }
     });
     const finish = (_session, endInfo) => {
       if (!inCall && !endInfo) return;
