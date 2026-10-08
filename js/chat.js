@@ -44,7 +44,9 @@ export function createChat({ config, identity, onMessage, onUi, onStatus, onTypi
       const text = typeof output?.text === "string" ? output.text.trim() : "";
       const choices = readChoices(output?.data);
       // Data-only outputs (aisa_ui updates) never render as empty bubbles.
-      if (text || choices.length) onMessage({ from: "bot", text, choices, via: "chat" });
+      // Streamed pieces of one AI Agent reply share _cognigy._messageId; the page joins only those into one bubble.
+      const mid = output?.data?._cognigy?._messageId || null;
+      if (text || choices.length) onMessage({ from: "bot", text, choices, via: "chat", mid });
     });
     client.on("finalPing", () => onTyping(false));
     client.on("error", (err) => {

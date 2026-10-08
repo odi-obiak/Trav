@@ -2,9 +2,10 @@ import { el } from "./util.js";
 
 // One running conversation for chat, voice and typed-during-call turns, as in the wireframe.
 // AISA's replies arrive in pieces: the AI Agent streams and cuts at line breaks and sentence ends (voice needs that for
-// speed), so on chat a list would otherwise be one bubble per bullet. Back-to-back pieces of one reply (same channel,
-// nothing in between, close in time) go into one bubble.
-const MERGE_WINDOW_MS = { chat: 4000, voice: 10000 };
+// speed), so on chat a list would otherwise be one bubble per bullet. Chat: pieces with the same message id
+// (_cognigy._messageId, one per AI Agent reply) join one bubble; flow messages without an id (the welcome, notices)
+// stay separate. Voice transcripts carry no id, so back-to-back pieces close in time join instead.
+const MERGE_WINDOW_MS = { voice: 10000 };
 const BULLET = /^\s*([-*\u2022]|\d{1,2}[.)])\s+/;
 function joinPiece(prev, next) {
   const lastLine = prev.split("\n").pop();
@@ -70,11 +71,11 @@ export function createTranscript(root, { onChoice }) {
   let open = null;
 
   return {
-    add({ from, text, choices = [], via, image }) {
+    add({ from, text, choices = [], via, image, mid }) {
       const channel = via || "chat";
       const now = Date.now();
-      if (from === "bot" && text && !image && open && open.via === channel && list.lastElementChild === open.bubble
-        && now - open.at < (MERGE_WINDOW_MS[channel] || 4000)) {
+      const samePiece = channel === "voice" ? now - (open ? open.at : 0) < MERGE_WINDOW_MS.voice : !!mid && open && open.mid === mid;
+      if (from === "bot" && text && !image && open && open.via === channel && list.lastElementChild === open.bubble && samePiece) {
         clearChoices();
         open.text = joinPiece(open.text, String(text).trim());
         open.at = now;
@@ -98,7 +99,7 @@ export function createTranscript(root, { onChoice }) {
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
-      open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now } : null;
+      open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now, mid: mid || null } : null;
       if (choices.length) {
         lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Suggested replies" },
           ...choices.map((c) => {
