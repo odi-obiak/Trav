@@ -138,10 +138,6 @@ export function createTranscript(root, { onChoice }) {
       typing.hidden = !on;
       if (on) scroll();
     },
-    // Last turns, newest last, capped so the SIP INFO and chat payloads stay small.
-    recent(max = 12) {
-      return history.slice(-max);
-    },
     get count() {
       return list.querySelectorAll(".msg").length;
     },

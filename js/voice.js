@@ -36,12 +36,8 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
       inCall = true;
       onStatus("live");
       if (pendingEntry) {
-        const compact = { ...pendingEntry };
-        if (compact.recent && compact.recent.length > 6) compact.recent = compact.recent.slice(-6);
-        debug("voice out", compact);
-        const json = JSON.stringify(compact);
-        debug("voice SIP INFO size", json.length, "bytes");
-        if (json.length > 8000) console.warn("[aisa-diag] SIP INFO payload is", json.length, "bytes — may exceed Voice Gateway limits and be dropped");
+        debug("voice out", pendingEntry);
+        const json = JSON.stringify(pendingEntry);
         // No text: the SDK's first argument arrives in the flow as the customer's words, so "aisa_entry" used to reach
         // the AI Agent as if said (the router now ignores it too). The 2 s resend is a safety net for a lost INFO; the
         // router answers only the first one and ends the duplicate silently.
@@ -74,15 +70,13 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
         : info?.request?.body !== undefined ? info.request.body
         : ev?.body;
       debug("voice in", typeof body, typeof body === "string" ? body.slice(0, 200) : body);
-      // Always-on diagnostic: shows whether Send Metadata from the flow is reaching the browser.
-      console.log("[aisa-diag] infoReceived:", typeof body, typeof body === "string" ? body.slice(0, 300) : JSON.stringify(body)?.slice(0, 300));
+      // Behind ?debug=1 only: SIP INFO bodies carry names, addresses and dates of birth.
       const ui = extractUi(body);
       if (ui) {
         debug("voice ui applied", Object.keys(ui));
-        console.log("[aisa-diag] voice ui applied, keys:", Object.keys(ui).join(", "), ui.xappUrl ? "xappUrl=" + ui.xappUrl.slice(0, 80) : "(no xappUrl)");
         onUi(ui);
       } else {
-        console.warn("[aisa-diag] voice ui NOT found in infoReceived body — panel won't update this turn");
+        debug("voice ui not found in this SIP INFO body");
       }
     });
     const finish = (_session, endInfo) => {
@@ -102,8 +96,7 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
   return {
     // Must run from a user gesture (button click) so the browser allows microphone and audio playback.
     async start(entry) {
-      const { handoff, ...lightweight } = entry;
-      pendingEntry = { ...lightweight, channel: "voice" };
+      pendingEntry = { ...entry, channel: "voice" };
       const c = await ensure(identity.userId);
       onStatus("connecting");
       await c.connectAndCall();
