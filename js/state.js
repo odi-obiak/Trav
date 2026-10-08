@@ -22,6 +22,7 @@ export function createStore() {
     efficiency: null, // { total, asked, filled, fromDoc, fromRecords, fromAnswers, chip, line, detail } from the flow
     catalog: DEFAULT_CATALOG, // steps and wording, replaced by aisa_ui.panel from the flow (rules.panel)
     focus: null, // { section, key, seq }: where the flow wants the panel; seq changes with every new request
+    choices: null, // { path, label, options } for the question AISA is asking now, shown as buttons; null when none
   };
   let focusSeq = 0;
   const listeners = new Set();
@@ -76,10 +77,18 @@ export function createStore() {
         advisorRecord: ui.advisorRecord && typeof ui.advisorRecord === "object" ? ui.advisorRecord : state.advisorRecord,
         notice: typeof ui.notice === "string" ? ui.notice : state.notice,
         efficiency: ui.efficiency && typeof ui.efficiency === "object" ? ui.efficiency : state.efficiency,
+        choices: "choices" in ui ? readChoices(ui.choices) : state.choices,
       };
       emit();
     },
   };
+}
+
+// The current question's options, from the flow. Only short strings are kept; anything else means no buttons.
+function readChoices(c) {
+  if (!c || typeof c !== "object" || typeof c.path !== "string" || !Array.isArray(c.options)) return null;
+  const options = c.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12);
+  return options.length ? { path: c.path, label: typeof c.label === "string" ? c.label : "", options } : null;
 }
 
 // Accepts the shapes Cognigy may deliver: bare object, JSON string, wrapped in data/payload/body/info.

@@ -54,6 +54,9 @@ export function createTranscript(root, { onChoice }) {
   const list = root.querySelector("[data-messages]");
   const typing = root.querySelector("[data-typing]");
   let lastChoices = null;
+  // Options for the question AISA is asking now (aisa_ui.choices). They stay under AISA's latest message while its reply
+  // streams in, and go away once the customer answers (a tap or a typed reply) or the flow moves on.
+  let offered = null;
   // What was said, kept in memory for the channel switch (Step 7): the other channel gets the last few turns so AISA
   // can carry on mid-thought. Never stored on the device.
   const history = [];
@@ -65,6 +68,23 @@ export function createTranscript(root, { onChoice }) {
   function clearChoices() {
     lastChoices?.remove();
     lastChoices = null;
+  }
+
+  function showOffered() {
+    if (!offered) return;
+    const { set, onPick } = offered;
+    clearChoices();
+    lastChoices = el("div", { class: "choices", role: "group", "aria-label": set.label || "Choose an answer" },
+      ...set.options.map((value) => {
+        const b = el("button", { class: "choice", type: "button" }, value);
+        b.addEventListener("click", () => {
+          offered = null;
+          clearChoices();
+          onPick(value);
+        });
+        return b;
+      }));
+    list.append(lastChoices);
   }
 
   // The open AISA bubble that the next piece of the same reply can join.
@@ -83,10 +103,12 @@ export function createTranscript(root, { onChoice }) {
         const h = history[history.length - 1];
         if (h && h.from === "aisa") h.text = open.text.slice(0, 600);
         if (choices.length) this.actions(choices);
+        else showOffered();
         scroll();
         return;
       }
       clearChoices();
+      if (from === "user") offered = null;
       if (text) history.push({ from: from === "user" ? "customer" : "aisa", text: String(text).slice(0, 600), via: channel });
       const who = from === "user" ? "You" : "AISA";
       const badge = from === "bot"
@@ -111,7 +133,14 @@ export function createTranscript(root, { onChoice }) {
             return b;
           }));
         list.append(lastChoices);
-      }
+      } else if (from === "bot") showOffered();
+      scroll();
+    },
+    // The question's options from the flow; onPick(value) sends the tap. null clears them.
+    offer(set, onPick) {
+      offered = set && Array.isArray(set.options) && set.options.length ? { set, onPick } : null;
+      clearChoices();
+      showOffered();
       scroll();
     },
     // Buttons with no bubble, e.g. "Share document" when AISA asks for a file.

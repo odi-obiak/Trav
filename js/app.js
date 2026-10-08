@@ -23,6 +23,9 @@ const entry = {
   campaign: params.get("utm_campaign") || CONFIG.defaultOffer.campaign,
   source: params.get("utm_source") || CONFIG.defaultOffer.source,
   landedAt: new Date().toISOString(),
+  // This page shows aisa_ui.choices as buttons, so the flow can stop naming every option in AISA's text (and on a call,
+  // point to the screen instead of reading a list). An older page leaves this out and keeps the spoken or typed options.
+  ui: { choices: true },
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -340,6 +343,7 @@ input.addEventListener("keydown", (e) => {
 });
 
 let lastNotice = null;
+let lastChoices = null;
 store.subscribe((state) => {
   // A new screen in the panel: forget which one was showing until it announces itself.
   if (state.xappUrl !== xappKindUrl) {
@@ -350,6 +354,12 @@ store.subscribe((state) => {
   document.body.dataset.channel = state.channel;
   $("[data-preview]").hidden = !state.preview;
   if (state.notice && state.notice !== lastNotice) transcript.note(state.notice);
+  // The question's options as buttons under AISA's latest message (chat and during a call). A tap is data only: the flow
+  // saves it in code and accepts only an option it just offered (turn_router.js "choice").
+  if (state.choices !== lastChoices) {
+    lastChoices = state.choices;
+    transcript.offer(state.choices, (value) => sendEvent(value, { aisa_event: { type: "choice", path: state.choices.path, value, quoteId } }));
+  }
   lastNotice = state.notice;
 });
 
