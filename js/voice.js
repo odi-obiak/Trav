@@ -10,8 +10,8 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
   let pendingEntry = null;
   let entrySent = false; // the flow has the call's entry; before that, page data would arrive ahead of the quote
 
-  // A call started from chat puts "-fromchat" in the opaque userId (sent in the SIP URI), so the flow's first voice
-  // turn knows to skip the welcome before the quote state arrives by SIP INFO. Click To Call has no call-start data.
+  // Both chat and voice share the same userId ("aisa-<quoteId>") so they share the same Contact Profile. No
+  // "-fromchat" suffix: the profile is the primary continuity mechanism, not a userId convention.
   // DEMO SHORTCUT: production passes the quote id only and the flow reads the draft quote from the system of record.
   let clientUserId = null;
   async function ensure(userId) {
@@ -58,7 +58,9 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
     client.on("transcription", (t) => {
       const from = t?.originator === "user" ? "user" : "bot";
       for (const m of t?.messages || []) {
-        if (m?.text) onMessage({ from, text: m.text, via: "voice" });
+        // Filter out SIP INFO body echoes: sendInfo("aisa_entry", ...) is entry data, not speech.
+        // Voice Gateway echoes the body text as a transcription, showing "You spoken: aisa_entry".
+        if (m?.text && m.text !== "aisa_entry") onMessage({ from, text: m.text, via: "voice" });
       }
     });
     client.on("infoReceived", (ev) => {
@@ -97,8 +99,9 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
   return {
     // Must run from a user gesture (button click) so the browser allows microphone and audio playback.
     async start(entry) {
-      pendingEntry = { ...entry, channel: "voice" };
-      const c = await ensure(entry.switchedFrom === "chat" ? `${identity.userId}-fromchat` : identity.userId);
+      const { handoff, ...lightweight } = entry;
+      pendingEntry = { ...lightweight, channel: "voice" };
+      const c = await ensure(identity.userId);
       onStatus("connecting");
       await c.connectAndCall();
     },
