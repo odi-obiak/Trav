@@ -42,14 +42,17 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
         const json = JSON.stringify(compact);
         debug("voice SIP INFO size", json.length, "bytes");
         if (json.length > 8000) console.warn("[aisa-diag] SIP INFO payload is", json.length, "bytes — may exceed Voice Gateway limits and be dropped");
+        // No text: the SDK's first argument arrives in the flow as the customer's words, so "aisa_entry" used to reach
+        // the AI Agent as if said (the router now ignores it too). The 2 s resend is a safety net for a lost INFO; the
+        // router answers only the first one and ends the duplicate silently.
         try {
-          await client.sendInfo("aisa_entry", { aisa_entry_json: json });
+          await client.sendInfo("", { aisa_entry_json: json });
         } catch (err) {
           debug("voice entry not sent", err);
         }
         setTimeout(async () => {
           if (!inCall) return;
-          try { await client.sendInfo("aisa_entry", { aisa_entry_json: json }); } catch {}
+          try { await client.sendInfo("", { aisa_entry_json: json }); } catch {}
         }, 2000);
       }
       entrySent = true;

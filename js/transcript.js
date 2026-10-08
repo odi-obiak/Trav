@@ -1,6 +1,54 @@
 import { el } from "./util.js";
 
 // One running conversation for chat, voice and typed-during-call turns, as in the wireframe.
+// AISA's replies arrive in pieces: the AI Agent streams and cuts at line breaks and sentence ends (voice needs that for
+// speed), so on chat a list would otherwise be one bubble per bullet. Back-to-back pieces of one reply (same channel,
+// nothing in between, close in time) go into one bubble.
+const MERGE_WINDOW_MS = { chat: 4000, voice: 10000 };
+const BULLET = /^\s*([-*\u2022]|\d{1,2}[.)])\s+/;
+function joinPiece(prev, next) {
+  const lastLine = prev.split("\n").pop();
+  if (BULLET.test(next)) return prev + "\n" + next;
+  if (/:\s*$/.test(prev)) return prev + "\n" + next;
+  // "(yes or no)" after "- Is this also your mailing address?" belongs to that bullet.
+  if (BULLET.test(lastLine)) return /^[(a-z]/.test(next) ? prev + " " + next : prev + "\n" + next;
+  return prev + " " + next;
+}
+
+// Light formatting for AISA's text: "- " / "* " / "1." lines become a list, **bold** becomes bold, other lines become
+// paragraphs. Built from text nodes only, never innerHTML, so nothing in a message can inject markup.
+function inline(line) {
+  const out = [];
+  const parts = String(line).split(/(\*\*[^*]+\*\*)/);
+  for (const part of parts) {
+    if (!part) continue;
+    const m = part.match(/^\*\*([^*]+)\*\*$/);
+    out.push(m ? el("strong", {}, m[1]) : part);
+  }
+  return out;
+}
+function formatText(text) {
+  const nodes = [];
+  let list = null;
+  for (const raw of String(text).split("\n")) {
+    const line = raw.trim();
+    if (!line) { list = null; continue; }
+    const m = line.match(BULLET);
+    if (m) {
+      const ordered = /\d/.test(m[1]);
+      if (!list || list.ordered !== ordered) {
+        list = { ordered, node: el(ordered ? "ol" : "ul", { class: "msg-list" }) };
+        nodes.push(list.node);
+      }
+      list.node.append(el("li", {}, ...inline(line.slice(m[0].length))));
+    } else {
+      list = null;
+      nodes.push(el("p", { class: "msg-text" }, ...inline(line)));
+    }
+  }
+  return nodes;
+}
+
 export function createTranscript(root, { onChoice }) {
   const list = root.querySelector("[data-messages]");
   const typing = root.querySelector("[data-typing]");
@@ -18,20 +66,39 @@ export function createTranscript(root, { onChoice }) {
     lastChoices = null;
   }
 
+  // The open AISA bubble that the next piece of the same reply can join.
+  let open = null;
+
   return {
     add({ from, text, choices = [], via, image }) {
+      const channel = via || "chat";
+      const now = Date.now();
+      if (from === "bot" && text && !image && open && open.via === channel && list.lastElementChild === open.bubble
+        && now - open.at < (MERGE_WINDOW_MS[channel] || 4000)) {
+        clearChoices();
+        open.text = joinPiece(open.text, String(text).trim());
+        open.at = now;
+        open.body.replaceChildren(...formatText(open.text));
+        const h = history[history.length - 1];
+        if (h && h.from === "aisa") h.text = open.text.slice(0, 600);
+        if (choices.length) this.actions(choices);
+        scroll();
+        return;
+      }
       clearChoices();
-      if (text) history.push({ from: from === "user" ? "customer" : "aisa", text: String(text).slice(0, 400), via: via || "chat" });
+      if (text) history.push({ from: from === "user" ? "customer" : "aisa", text: String(text).slice(0, 600), via: channel });
       const who = from === "user" ? "You" : "AISA";
       const badge = from === "bot"
         ? el("span", { class: "msg-avatar", "aria-hidden": "true" }, "AI")
         : null;
       const tag = via === "voice" ? el("span", { class: "msg-via" }, "spoken") : null;
+      const body = el("div", { class: "msg-body" }, ...(text ? (from === "bot" ? formatText(text) : [el("p", { class: "msg-text" }, text)]) : []));
       const bubble = el("div", { class: `msg msg-${from}` },
         el("div", { class: "msg-who" }, badge, who, tag),
-        text ? el("p", { class: "msg-text" }, text) : null,
+        body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
+      open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now } : null;
       if (choices.length) {
         lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Suggested replies" },
           ...choices.map((c) => {
@@ -62,6 +129,7 @@ export function createTranscript(root, { onChoice }) {
       scroll();
     },
     note(text) {
+      open = null;
       list.append(el("p", { class: "msg-note", role: "status" }, text));
       scroll();
     },

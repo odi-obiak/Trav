@@ -103,6 +103,10 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .msg-avatar { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 9px; font-weight: 700; }
 .msg-via { font-weight: 500; font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; }
 .msg-text { margin: 0; font-size: 15px; white-space: pre-wrap; }
+.msg-body > * + * { margin-top: 8px; }
+.msg-list { margin: 0; padding-left: 22px; font-size: 15px; }
+.msg-list li + li { margin-top: 4px; }
+.msg-list li::marker { color: var(--navy); }
 .msg-note { align-self: center; margin: 2px 0; font-size: 12.5px; color: var(--muted); background: var(--line-soft); border-radius: 999px; padding: 3px 12px; text-align: center; }
 .choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; }
 .choice { font: inherit; font-size: 14px; cursor: pointer; background: #fff; color: var(--navy); border: 1px solid var(--navy-soft); border-radius: 999px; padding: 5px 14px; }
