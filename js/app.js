@@ -11,8 +11,8 @@ import { randomId, formatClock, debug } from "./util.js";
 const params = new URLSearchParams(location.search);
 const isPreview = params.get("preview") === "1";
 
-// No Contact Profile and nothing stored on the device (Travelers privacy constraint). Every page load is a new quote;
-// the user id is an opaque per-quote id (no PII, per the Click To Call docs), so nothing links two visits.
+// Contact Profile keyed on quoteId (via userId = "aisa-<quoteId>") is the primary cross-session store. Both chat and
+// voice share the same userId so they share the same profile. Nothing is stored on the device.
 // Chat and voice keep separate session ids: reusing user+session across endpoints causes collisions.
 const quoteId = params.get("quote") || randomId("Q");
 const identity = { userId: `aisa-${quoteId}`, quoteId, chatSessionId: `chat-${quoteId}` };
@@ -129,11 +129,10 @@ const voice = createVoice({
     }
     callWasLive = false;
     transcript.note("Call ended. You're back in chat, and everything you told AISA is kept.");
-    // Step 7: hand the call's last quote state back to chat (held in memory only, see state.js `handoff`).
-    const handoff = store.get().handoff || null;
+    // Step 7: the Contact Profile already has the call's state. Send only recent turns for context.
     const recent = transcript.recent();
-    const note = { aisa_event: { type: "returned_from_voice", quoteId, handoff, recent } };
-    (chat.started ? chat.send("", note, { echo: false }) : chat.start({ ...entry, switchedFrom: "voice", handoff, recent })).then(resendScreen).catch((err) => say(err.message));
+    const note = { aisa_event: { type: "returned_from_voice", quoteId, recent } };
+    (chat.started ? chat.send("", note, { echo: false }) : chat.start({ ...entry, switchedFrom: "voice", recent })).then(resendScreen).catch((err) => say(err.message));
   },
 });
 
@@ -166,10 +165,9 @@ async function startVoice(fromChat) {
     pendingSwitchFromChat = Boolean(fromChat);
     store.set({ channel: "voice" });
     transcript.note(fromChat ? "Switching to voice. Allow the microphone if your browser asks." : "Starting a voice conversation in your browser. Allow the microphone if asked.");
-    // Step 7: the quote state plus the last few turns, so AISA knows what was just said, not only what was saved.
-    const handoff = fromChat ? store.get().handoff || null : null;
-    if (fromChat) console.warn("[aisa-diag] startVoice handoff:", handoff ? "present (v=" + handoff.v + ", quoteId=" + handoff.quoteId + ", updatedAt=" + handoff?.aisa?.updatedAt + ", aisa keys=" + Object.keys(handoff.aisa || {}).join(",").slice(0, 200) + ")" : "NULL — store has no handoff from chat");
-    await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null, handoff, recent: fromChat ? transcript.recent() : null });
+    // Step 7: the Contact Profile already has the chat's state. Send only recent turns for spoken context.
+    if (fromChat) console.log("[aisa-diag] startVoice: profile-based continuity, no handoff blob in SIP INFO");
+    await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null, recent: fromChat ? transcript.recent() : null });
   } catch (err) {
     stopClock();
     pendingSwitchFromChat = false;
