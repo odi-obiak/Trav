@@ -105,6 +105,9 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .msg-text { margin: 0; font-size: 15px; white-space: pre-wrap; }
 .msg-body > * + * { margin-top: 8px; }
 .msg-list { margin: 0; padding-left: 22px; font-size: 15px; }
+/* A group title in a confirmation ("**Vehicles**"): a little space above, so the groups read apart. */
+.msg-body > .msg-heading:not(:first-child) { margin-top: 14px; }
+.msg-heading + * { margin-top: 4px; }
 .msg-list li + li { margin-top: 4px; }
 .msg-list li::marker { color: var(--navy); }
 .msg-note { align-self: center; margin: 2px 0; font-size: 12.5px; color: var(--muted); background: var(--line-soft); border-radius: 999px; padding: 3px 12px; text-align: center; }

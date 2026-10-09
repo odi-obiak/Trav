@@ -7,8 +7,12 @@ import { el } from "./util.js";
 // stay separate. Voice transcripts carry no id, so back-to-back pieces close in time join instead.
 const MERGE_WINDOW_MS = { voice: 10000 };
 const BULLET = /^\s*([-*\u2022]|\d{1,2}[.)])\s+/;
+// A bold-only line ("**Vehicles**") is a group title in a confirmation (2026-10-09): it always starts its own line, and
+// so does whatever follows it, or the stream's pieces would run the title and its first item together.
+const HEADING = /^\s*\*\*[^*]+\*\*:?\s*$/;
 function joinPiece(prev, next) {
   const lastLine = prev.split("\n").pop();
+  if (HEADING.test(next) || HEADING.test(lastLine)) return prev + "\n" + next;
   if (BULLET.test(next)) return prev + "\n" + next;
   if (/:\s*$/.test(prev)) return prev + "\n" + next;
   // "(yes or no)" after "- Is this also your mailing address?" belongs to that bullet.
@@ -44,7 +48,7 @@ function formatText(text) {
       list.node.append(el("li", {}, ...inline(line.slice(m[0].length))));
     } else {
       list = null;
-      nodes.push(el("p", { class: "msg-text" }, ...inline(line)));
+      nodes.push(el("p", { class: HEADING.test(line) ? "msg-text msg-heading" : "msg-text" }, ...inline(line)));
     }
   }
   return nodes;
