@@ -25,7 +25,8 @@ const entry = {
   landedAt: new Date().toISOString(),
   // This page shows aisa_ui.choices as buttons, so the flow can stop naming every option in AISA's text (and on a call,
   // point to the screen instead of reading a list). An older page leaves this out and keeps the spoken or typed options.
-  ui: { choices: true, multiChoices: true }, // multiChoices: tick boxes for "select all that apply" (2026-10-11)
+  // multiChoices: tick boxes for "select all that apply"; rowChoices: a row of buttons per part of a grouped question (2026-10-11)
+  ui: { choices: true, multiChoices: true, rowChoices: true },
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -311,6 +312,80 @@ const panel = createPanel($("[data-panel]"), {
   },
 });
 
+// ---- Quote drawer on phones (TDS Drawer pattern, Figma 8.8.0 "Drawer for a Chat"). Under 900 px the panel is a drawer
+// from the right, opened from the "Your quote" bar above the composer. It opens on its own only for what the customer
+// has to see: a screen AISA shares (upload, rate page), Review and the rate step, and the advisor summary. Other updates
+// only mark the bar "Updated". Escape, the scrim and the close button close it; focus stays inside while it is open.
+const phone = window.matchMedia("(max-width: 900px)");
+const panelEl = $("[data-panel]");
+const peekBtn = $("[data-action='open-quote']");
+const scrim = $(".drawer-scrim");
+let drawerOpen = false;
+let drawerReturn = null;
+screen.track({ panelOpen: !phone.matches });
+
+function setDrawer(open, { byCustomer = true } = {}) {
+  if (open === drawerOpen) return;
+  drawerOpen = open;
+  document.body.classList.toggle("quote-open", open);
+  scrim.hidden = !open;
+  peekBtn.setAttribute("aria-expanded", String(open));
+  if (open) {
+    panelEl.setAttribute("role", "dialog");
+    panelEl.setAttribute("aria-modal", "true");
+    $("[data-peek-new]").hidden = true;
+    drawerReturn = document.activeElement;
+    panelEl.querySelector(".panel-head .icon-btn").focus({ preventScroll: true });
+  } else {
+    panelEl.removeAttribute("role");
+    panelEl.removeAttribute("aria-modal");
+    if (drawerReturn && panelEl.contains(document.activeElement)) drawerReturn.focus({ preventScroll: true });
+    drawerReturn = null;
+  }
+  if (byCustomer) screen.report({ panelOpen: open });
+  else screen.track({ panelOpen: open });
+}
+peekBtn.addEventListener("click", () => setDrawer(true));
+scrim.addEventListener("click", () => setDrawer(false));
+document.addEventListener("keydown", (e) => {
+  if (!drawerOpen) return;
+  if (e.key === "Escape") return setDrawer(false);
+  if (e.key !== "Tab") return;
+  const items = [...panelEl.querySelectorAll("button, a[href], iframe, [tabindex]:not([tabindex='-1'])")]
+    .filter((x) => !x.disabled && x.offsetParent !== null);
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+// Rotating or resizing past the breakpoint: the desktop panel takes over, so leave no drawer state behind.
+phone.addEventListener("change", () => {
+  if (!phone.matches) setDrawer(false, { byCustomer: false });
+  screen.track({ panelOpen: phone.matches ? drawerOpen : !document.body.classList.contains("panel-hidden") });
+});
+
+let drawerSeen = null;
+function followDrawer(state) {
+  // The bar mirrors the panel's own step label and "filled for you" chip.
+  $("[data-peek-step]").textContent = $("[data-step-label]").textContent;
+  const eff = $("[data-eff]");
+  const peekEff = $("[data-peek-eff]");
+  peekEff.hidden = eff.hidden;
+  peekEff.textContent = eff.hidden ? "" : eff.textContent.split(" · ")[0]; // the count only; no room for "time saved"
+  const seen = drawerSeen || {};
+  // applyUi copies the field map on every update, so compare what the customer would see, not the map.
+  const fieldsSig = [...state.fields.values()].map((f) => `${f.key}=${f.value}|${f.source}|${f.confirmed}`).join("\n");
+  drawerSeen = { xappUrl: state.xappUrl, advisorSummary: state.advisorSummary, focusSeq: state.focus && state.focus.seq, fieldsSig };
+  if (!phone.matches || !document.body.classList.contains("in-conversation")) return;
+  const mustSee = (state.xappUrl && state.xappUrl !== seen.xappUrl)
+    || (state.advisorSummary && state.advisorSummary !== seen.advisorSummary)
+    || (state.focus && state.focus.seq !== seen.focusSeq && ["review", "rate"].includes(state.focus.section));
+  if (mustSee) return setDrawer(true, { byCustomer: false });
+  const changed = (state.focus && state.focus.seq !== seen.focusSeq) || (seen.fieldsSig !== undefined && fieldsSig !== seen.fieldsSig);
+  if (changed && !drawerOpen) $("[data-peek-new]").hidden = false;
+}
+
 // ---- Messages from xApp screens in the panel. The xApp shell renders a screen in a nested frame (screen > shell >
 // page), so accept a message only from a frame inside our own panel frame; the screen's origin can be "null".
 // Payloads are checked against fixed lists; nothing from them is shown or sent as text.
@@ -378,6 +453,7 @@ on("mute", async (e) => {
 });
 on("person", talkToPerson);
 on("toggle-panel", () => {
+  if (phone.matches) return setDrawer(false); // on phones the panel's close button closes the drawer
   const hidden = document.body.classList.toggle("panel-hidden");
   screen.report({ panelOpen: !hidden });
   const tab = $(".panel-tab");
@@ -409,6 +485,7 @@ store.subscribe((state) => {
   }
   panel.render(state);
   followAttach(state);
+  followDrawer(state);
   document.body.dataset.channel = state.channel;
   $("[data-preview]").hidden = !state.preview;
   if (state.notice && state.notice !== lastNotice) transcript.note(state.notice);
@@ -417,7 +494,11 @@ store.subscribe((state) => {
   if (state.choices !== lastChoices) {
     lastChoices = state.choices;
     const set = state.choices;
-    transcript.offer(set, (value) => set.multi
+    transcript.offer(set, (value) => set.rows
+      // { rowPath: option } for the rows answered; the flow saves those and asks for the rest (turn_router.js "choice").
+      ? sendEvent(set.rows.filter((r) => value[r.path]).map((r) => `${r.label ? r.label.replace(/\?$/, "") + ": " : ""}${value[r.path]}`).join(". "),
+        { aisa_event: { type: "choice", path: set.path, rows: value, quoteId } })
+      : set.multi
       // Ticked labels (empty for "None of these"); the flow saves every listed feature (turn_router.js "choice").
       ? sendEvent(value.length ? value.join(", ") : set.none, { aisa_event: { type: "choice", path: set.path, values: value, quoteId } })
       : sendEvent(value, { aisa_event: { type: "choice", path: set.path, value, quoteId } }));

@@ -24,7 +24,7 @@ export const PREVIEW_SCRIPT = [
       { key: "client.state", label: "State", value: "CT", source: "customer" },
       { key: "client.zip", label: "ZIP", value: "06105", source: "customer", confirmed: false },
     ], documents: { read: 0, status: "offered", offer: true } },
-    bot: "Got it, I've put that in your quote on the right so you can check it. Do you have any auto documents handy, like a declaration page or driver's license?",
+    bot: "Got it, I've added that to your quote so you can check it. Do you have any auto documents handy, like a declaration page or driver's license?",
   },
   { user: "Yes, here's a photo of it.", wait: 1400 },
   { note: "Document received (photo). Reading it now." },
@@ -65,6 +65,15 @@ export const PREVIEW_SCRIPT = [
     choices: [{ title: "Owned", payload: "Owned" }, { title: "Financed", payload: "Financed" }, { title: "Leased", payload: "Leased" }],
   },
   { user: "Financed", wait: 1600 },
+  {
+    // A question asked as one group: a row of buttons per part with options, one Done (aisa_ui.choices.rows, 2026-10-11).
+    ui: { choices: { path: "vehicles.v1.safetyFeatures", label: "Safety features", rows: [
+      { path: "vehicles.v1.AEB", label: "Automatic emergency braking?", options: ["Yes", "No"] },
+      { path: "vehicles.v1.antiTheft", label: "Anti-theft device?", options: ["None", "Alarm", "Active Tracking", "Passive Tracking", "Vehicle Recovery System", "Other"] },
+    ] } },
+    bot: "Does the Ford Escape have automatic emergency braking, and any anti-theft devices like an alarm or a tracking system?",
+  },
+  { user: "Automatic emergency braking: Yes. Anti-theft device: Alarm", wait: 9000 },
   {
     // "Select all that apply" (rules.selectSets): shown only when two or more features apply in the quote's state.
     ui: { choices: { path: "vehicles.v2.features", label: "Vehicle features", options: ["Automatic emergency braking", "Anti-lock brakes"], multi: true, none: "None of these" } },

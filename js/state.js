@@ -90,7 +90,17 @@ export function createStore() {
 
 // The current question's options, from the flow. Only short strings are kept; anything else means no buttons.
 function readChoices(c) {
-  if (!c || typeof c !== "object" || typeof c.path !== "string" || !Array.isArray(c.options)) return null;
+  if (!c || typeof c !== "object" || typeof c.path !== "string") return null;
+  // A question asked as one group (2026-10-11): a row of buttons per option list or yes/no part, one Done for all.
+  if (Array.isArray(c.rows)) {
+    const rows = c.rows.slice(0, 6).map((r) => {
+      if (!r || typeof r.path !== "string") return null;
+      const options = Array.isArray(r.options) ? r.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12) : [];
+      return options.length ? { path: r.path, label: typeof r.label === "string" ? r.label : "", options } : null;
+    }).filter(Boolean);
+    return rows.length ? { path: c.path, label: typeof c.label === "string" ? c.label : "", rows } : null;
+  }
+  if (!Array.isArray(c.options)) return null;
   const options = c.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12);
   if (!options.length) return null;
   const set = { path: c.path, label: typeof c.label === "string" ? c.label : "", options };

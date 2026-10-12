@@ -111,11 +111,45 @@ export function createTranscript(root, { onChoice }) {
     list.append(lastChoices);
   }
 
-  function showOffered() {
-    if (!offered) return;
-    const { set, onPick } = offered;
-    clearChoices();
-    if (set.multi) return showMulti(set, onPick);
+  // A question asked as one group (2026-10-11): each part with options gets its own labelled row of buttons; one per row
+  // can be picked (aria-pressed, tap again to clear) and Done sends { rowPath: option } for the rows answered. A single
+  // row needs no Done: a tap answers it.
+  function showRows(set, onPick) {
+    if (set.rows.length === 1) {
+      const r = set.rows[0];
+      return showSingle({ path: r.path, label: r.label, options: r.options }, (value) => onPick({ [r.path]: value }));
+    }
+    const picked = {};
+    const done = el("button", { class: "choice choice-primary", type: "button", disabled: "" }, "Done");
+    const rowEls = set.rows.map((r) => {
+      const buttons = r.options.map((value) => {
+        const b = el("button", { class: "choice choice-toggle", type: "button", "aria-pressed": "false" }, value);
+        b.addEventListener("click", () => {
+          picked[r.path] = picked[r.path] === value ? undefined : value;
+          buttons.forEach((x, i) => x.setAttribute("aria-pressed", String(picked[r.path] === r.options[i])));
+          done.disabled = !set.rows.some((row) => picked[row.path]);
+        });
+        return b;
+      });
+      const label = r.label || "Choose one";
+      return el("div", { class: "choice-row", role: "group", "aria-label": label },
+        el("span", { class: "choice-row__label" }, label), el("div", { class: "choice-row__options" }, ...buttons));
+    });
+    done.addEventListener("click", () => {
+      const answer = {};
+      for (const r of set.rows) if (picked[r.path]) answer[r.path] = picked[r.path];
+      if (!Object.keys(answer).length) return;
+      offered = null;
+      clearChoices();
+      onPick(answer);
+    });
+    lastChoices = el("div", { class: "choices choices-rows", role: "group", "aria-label": set.label || "Your answers" },
+      ...rowEls, el("div", { class: "choice-row__done" }, done,
+        el("span", { class: "choices-hint" }, "Or type your answer. Anything you skip, AISA asks next.")));
+    list.append(lastChoices);
+  }
+
+  function showSingle(set, onPick) {
     lastChoices = el("div", { class: "choices", role: "group", "aria-label": set.label || "Choose an answer" },
       ...set.options.map((value) => {
         const b = el("button", { class: "choice", type: "button" }, value);
@@ -127,6 +161,15 @@ export function createTranscript(root, { onChoice }) {
         return b;
       }));
     list.append(lastChoices);
+  }
+
+  function showOffered() {
+    if (!offered) return;
+    const { set, onPick } = offered;
+    clearChoices();
+    if (set.rows) return showRows(set, onPick);
+    if (set.multi) return showMulti(set, onPick);
+    return showSingle(set, onPick);
   }
 
   // The open AISA bubble that the next piece of the same reply can join.
@@ -181,7 +224,7 @@ export function createTranscript(root, { onChoice }) {
     },
     // The question's options from the flow; onPick(value) sends the tap. null clears them.
     offer(set, onPick) {
-      offered = set && Array.isArray(set.options) && set.options.length ? { set, onPick } : null;
+      offered = set && ((Array.isArray(set.options) && set.options.length) || (Array.isArray(set.rows) && set.rows.length)) ? { set, onPick } : null;
       clearChoices();
       showOffered();
       scroll();

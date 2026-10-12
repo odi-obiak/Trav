@@ -205,9 +205,11 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     stepList.replaceChildren(...list.map((s, i) => {
       const hasData = isData(s) && stepFields(s).length > 0;
       const isCurrent = s === current;
-      const b = el("button", { type: "button", "aria-current": isCurrent ? "step" : undefined },
+      // Horizontal stepper (2026-10-11): the name is a tooltip and screen-reader text; the step label under the row
+      // names the step being shown.
+      const b = el("button", { type: "button", title: s.title, "aria-current": isCurrent ? "step" : undefined },
         el("span", { class: "step-num", "aria-hidden": "true" }, String(i + 1)),
-        el("span", {}, s.title),
+        el("span", { class: "step-title" }, `Step ${i + 1}: ${s.title}`),
         hasData && !isCurrent ? el("span", { class: "visually-hidden" }, " (has answers)") : null);
       b.addEventListener("click", () => {
         if (viewStep === s.id) return;

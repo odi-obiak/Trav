@@ -102,6 +102,16 @@
     <div class="typing" data-typing hidden aria-label="AISA is typing"><span></span><span></span><span></span></div>
 
     <div class="composer" data-composer>
+      <!-- Phones only: the quote opens as a TDS Drawer (Figma 8.8.0 "Drawer for a Chat"); this bar shows where you are. -->
+      <button class="quote-peek" data-action="open-quote" type="button" aria-controls="quote-panel-inner" aria-expanded="false">
+        <span class="quote-peek__text">
+          <b>Your quote</b>
+          <span class="quote-peek__step" data-peek-step>Step 1/7: About You</span>
+        </span>
+        <span class="tds-tag tds-tag--static tds-tag--mint pill quote-peek__eff" data-peek-eff hidden></span>
+        <span class="quote-peek__new" data-peek-new hidden>Updated</span>
+        <span class="quote-peek__chev" aria-hidden="true"></span>
+      </button>
       <!-- Browser voice: who you're talking to, call state and timer, and the two call controls. -->
       <div class="call-card" data-call-card role="group" aria-label="Voice call with AISA">
         <div class="call-who">
@@ -127,7 +137,7 @@
       <form class="composer-row" data-composer-form>
         <div class="tds-field composer-field">
           <label class="tds-field__label visually-hidden" for="composer-input">Your answer</label>
-          <textarea id="composer-input" class="tds-field__input" data-composer-input rows="2" placeholder="Type your answer, or ask AISA anything about your quote"></textarea>
+          <textarea id="composer-input" class="tds-field__input" data-composer-input rows="2" placeholder="Type your answer"></textarea>
         </div>
         <div class="composer-actions">
           <button class="attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF)">
@@ -135,10 +145,11 @@
             <svg class="attach-done" aria-hidden="true"><use href="#check-1-18"></use></svg>
             <span class="attach-spin" aria-hidden="true"></span>
             <span class="attach-label" data-attach-label>Upload document</span>
+            <span class="attach-short" aria-hidden="true">Upload</span>
             <span class="attach-count" data-attach-count hidden></span>
           </button>
           <button class="tds-button--secondary tds-button--small btn-call" data-action="switch-voice" type="button">
-            <svg class="tds-button__icon--first" aria-hidden="true"><use href="#microphone-1-18"></use></svg>Talk instead
+            <svg class="tds-button__icon--first" aria-hidden="true"><use href="#microphone-1-18"></use></svg><span class="label-long">Talk instead</span><span class="label-short" aria-hidden="true">Talk</span>
           </button>
           <button class="tds-button--primary composer-send" type="submit">Ask AISA</button>
         </div>
@@ -164,8 +175,8 @@
       <div class="progress" role="progressbar" aria-label="Quote steps" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
         <div class="progress-bar" data-progress></div>
       </div>
-      <p class="step-label" data-step-label>Step 1/7: About You</p>
       <ol class="step-list" data-step-list aria-label="Quote steps"></ol>
+      <p class="step-label" data-step-label>Step 1/7: About You</p>
       <!-- Advisor handoff: stays at the top of the panel on every step and after a call ends, until dismissed. -->
       <section class="xapp-card advisor-card" data-advisor-card hidden aria-label="Shared with your licensed advisor">
         <div class="card-head">
@@ -189,6 +200,7 @@
   </aside>
 </div>
 
+<div class="drawer-scrim" data-action="close-quote" hidden></div>
 <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 <script>
   // TDS clickable cards: a click anywhere on the card presses its button (TDS JS isn't loaded on this page).
