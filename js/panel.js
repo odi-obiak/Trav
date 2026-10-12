@@ -22,6 +22,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   const bar = root.querySelector("[data-progress]");
   const statusPill = root.querySelector("[data-status]");
   const effPill = root.querySelector("[data-eff]");
+  const stepList = root.querySelector("[data-step-list]"); // optional: older markup has no step list
   let lastFilled = 0;
   const xappCard = root.querySelector("[data-xapp-card]");
   const xappFrame = root.querySelector("[data-xapp]");
@@ -175,7 +176,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     wrap.append(el("p", { class: "muted" }, state.status === "rating" || state.status === "quote_ready"
       ? "Your quote is ready. The rate page opens here. (Simulated for the demo.)"
       : "Once AISA has everything it needs, your rate appears here."));
-    const advisor = el("button", { class: "btn btn-secondary", type: "button" }, "Talk to a licensed advisor");
+    const advisor = el("button", { class: "tds-button--secondary tds-button--small", type: "button" }, "Talk to a licensed advisor");
     advisor.addEventListener("click", onPerson);
     wrap.append(advisor);
     // The advisor summary and the rate screen live in cards at the top of the panel; bring them back if dismissed.
@@ -183,7 +184,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     if (state.xappUrl && dismissed.xapp === state.xappUrl) again.push(["Show the rate page again", "xapp"]);
     if (state.advisorSummary && dismissed.advisor === state.advisorSummary) again.push(["Show the advisor summary again", "advisor"]);
     for (const [label, which] of again) {
-      const b = el("button", { class: "link-btn show-again", type: "button" }, label);
+      const b = el("button", { class: "tds-button--tertiary tds-button--small link-btn show-again", type: "button" }, label);
       b.addEventListener("click", () => { dismissed[which] = null; byCustomer = true; render(state); });
       wrap.append(el("div", {}, b));
     }
@@ -196,6 +197,26 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     viewStep = list[Math.max(0, Math.min(list.length - 1, at + delta))].id;
     byCustomer = true;
     render(state);
+  }
+
+  // Every step at a glance: the one showing, the ones with answers (a tick), and a click to look at any of them. Looking
+  // only changes what the panel shows; the conversation and the flow's focus are unchanged.
+  function renderStepList(list, current) {
+    stepList.replaceChildren(...list.map((s, i) => {
+      const hasData = isData(s) && stepFields(s).length > 0;
+      const isCurrent = s === current;
+      const b = el("button", { type: "button", "aria-current": isCurrent ? "step" : undefined },
+        el("span", { class: "step-num", "aria-hidden": "true" }, String(i + 1)),
+        el("span", {}, s.title),
+        hasData && !isCurrent ? el("span", { class: "visually-hidden" }, " (has answers)") : null);
+      b.addEventListener("click", () => {
+        if (viewStep === s.id) return;
+        viewStep = s.id;
+        byCustomer = true;
+        render(state);
+      });
+      return el("li", { class: [hasData ? "has-data" : "", isCurrent ? "is-current" : ""].join(" ").trim() }, b);
+    }));
   }
 
   let fieldsSeen = null;
@@ -229,6 +250,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     bar.style.width = `${Math.round(((index + 1) / list.length) * 100)}%`;
     bar.parentElement.setAttribute("aria-valuenow", String(index + 1));
     bar.parentElement.setAttribute("aria-valuemax", String(list.length));
+    if (stepList) renderStepList(list, step);
     const status = state.catalog.statusLabels[state.status] || null;
     statusPill.hidden = !status;
     statusPill.textContent = status || "";
@@ -238,6 +260,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     effPill.hidden = !filled;
     if (filled) {
       effPill.textContent = eff.chip;
+      effPill.title = typeof eff.chipNote === "string" ? eff.chipNote : ""; // how the time saved was estimated
       if (filled > lastFilled) { effPill.classList.remove("bump"); void effPill.offsetWidth; effPill.classList.add("bump"); }
     }
     lastFilled = filled;
@@ -263,27 +286,27 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     // Confirm only what still needs it (document or records values marked "please confirm"), or the whole quote once
     // AISA says it's ready. The click sends a customer message; AISA records the confirmation through its tools.
     if (live && step.kind === "review" && state.status === "quote_ready") {
-      const yes = el("button", { class: "btn btn-primary btn-wide", type: "button" }, "Everything looks right");
+      const yes = el("button", { class: "tds-button--primary btn-wide", type: "button" }, "Everything looks right");
       yes.addEventListener("click", () => onConfirm({ step, all: true }));
       footer.append(yes);
     } else if (live && built.rows.some((f) => f.confirmed === false)) {
-      const yes = el("button", { class: "btn btn-primary btn-wide", type: "button" }, "These are correct");
+      const yes = el("button", { class: "tds-button--primary btn-wide", type: "button" }, "These are correct");
       yes.addEventListener("click", () => onConfirm({ step, all: false }));
       footer.append(yes);
     }
     if (live && built.rows.length && step.kind !== "rate") {
-      const fix = el("button", { class: "link-btn", type: "button" }, "Something's not right? Tell AISA");
+      const fix = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Something's not right? Tell AISA");
       fix.addEventListener("click", () => onCorrect({ step }));
       footer.append(fix);
     }
     const nav = el("div", { class: "step-nav" });
     if (index > 0) {
-      const back = el("button", { class: "link-btn", type: "button" }, "Previous step");
+      const back = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Previous step");
       back.addEventListener("click", () => go(-1));
       nav.append(back);
     }
     if (index < list.length - 1) {
-      const fwd = el("button", { class: "link-btn", type: "button" }, "Next step");
+      const fwd = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Next step");
       fwd.addEventListener("click", () => go(1));
       nav.append(fwd);
     }

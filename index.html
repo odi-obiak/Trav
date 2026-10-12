@@ -3,23 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AISA Auto Quote Test</title>
+<title>Auto Quote Assistant (demo)</title>
+<!-- Travelers enterprise fonts (Batterson Sans). Falls back to the system sans if the CDN can't be reached. -->
+<link rel="stylesheet" href="https://cdn.travelers.com/fonts/2.1/allfonts.min.css">
+<!-- Travelers Design System 8.8.1 (@trv-tds/core dist/css/tds.min.css, vendored; see css/README-tds.md). -->
+<link rel="stylesheet" href="css/tds.min.css">
 <link rel="stylesheet" href="css/page.css">
 <script type="module" src="js/app.js"></script>
 </head>
 <body data-channel="idle">
+<!-- TDS icons used on this page (from the TDS functional and logo sprites, docsite 8.8.1). -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+<symbol id="check-1-18" viewBox="0 0 18 18"><path d="M16.146 4.646a.5.5 0 01.708.708l-9.75 9.75a.5.5 0 01-.708 0l-5.25-5.25a.5.5 0 11.708-.708l4.896 4.897 9.396-9.397z" fill="currentColor"/></symbol>
+<symbol id="documents-1-18" viewBox="0 0 18 18"><path fill="currentColor" d="M10.732-.006a.5.5 0 01.275.082l.076.061 5.768 5.67a.5.5 0 01.143.277l.007.08v11.34a.5.5 0 01-.41.491l-.09.009H1.503a.5.5 0 01-.492-.41l-.008-.09V.494a.5.5 0 01.41-.492l.09-.008h9.23zm-.729.999h-8v16.01H16V6.619h-5.497a.5.5 0 01-.492-.41l-.008-.09V.993zm3.501 12.012a.5.5 0 01.09.992l-.09.008h-9a.5.5 0 01-.09-.992l.09-.008h9zm0-4.004a.5.5 0 01.09.992l-.09.008h-9a.5.5 0 01-.09-.992l.09-.008h9zm-6.031-4a.5.5 0 01.09.991L7.473 6h-3a.5.5 0 01-.09-.991L4.474 5h3z"/></symbol>
+<symbol id="documents-1-24" viewBox="0 0 24 24"><path fill="currentColor" d="M14 2H4v20h16V8h-5a1 1 0 01-.993-.883L14 7V2zm3 14a1 1 0 01.117 1.993L17 18H7a1 1 0 01-.117-1.993L7 16h10zm0-5a1 1 0 01.117 1.993L17 13H7a1 1 0 01-.117-1.993L7 11h10zm-6-5a1 1 0 01.117 1.993L11 8H7a1 1 0 01-.117-1.993L7 6h4zm11 17a1 1 0 01-.883.993L21 24H3a1 1 0 01-.993-.883L2 23V1a1 1 0 01.883-.993L3 0h12a1.01 1.01 0 01.25.031l.03.009c.03.009.061.02.091.031l.027.012a.914.914 0 01.195.112l.02.016.012.009.012.009.015.012.055.052 6 6a1.006 1.006 0 01.152.195l.018.032a.932.932 0 01.04.082l.012.027c.012.03.022.06.031.091l.008.03c.008.03.015.062.02.093l.006.065.001.013-.001-.02.003.02c.002.026.003.053.003.079v16z"/></symbol>
+<symbol id="headset-1-18" viewBox="0 0 18 18"><path d="M17 8.5v6c0 1.907-1.195 3.5-2.75 3.5H10.5a.5.5 0 110-1h3.75c.93 0 1.75-1.093 1.75-2.5v-.785a2.237 2.237 0 01-1.1.285h-2.4a.5.5 0 01-.5-.5v-5a.5.5 0 01.5-.5h3.497C15.88 4.11 12.789 1 9 1 5.21 1 2.12 4.11 2.003 8H5.5a.5.5 0 01.5.5v5a.5.5 0 01-.5.5H3.1C1.952 14 1 13.15 1 12.071V8.227C1 3.687 4.578 0 9 0c4.422 0 8 3.687 8 8.227V8.5zM5 9H2v3.071c0 .5.48.929 1.1.929H5V9zm11 0h-3v4h1.9c.62 0 1.1-.429 1.1-.929V9z" fill="currentColor"/></symbol>
+<symbol id="info-circle-1-18" viewBox="0 0 18 18"><path d="M9.5 13h1a.5.5 0 110 1h-3a.5.5 0 110-1h1V8.5h-1a.5.5 0 010-1H9a.5.5 0 01.5.5v5zM9 18A9 9 0 119 0a9 9 0 010 18zm0-1A8 8 0 109 1a8 8 0 000 16zm.002-11.25A.751.751 0 119 4.248a.751.751 0 01.002 1.502z" fill="currentColor"/></symbol>
+<symbol id="messages-1-24" viewBox="0 0 24 24"><path d="M22 18V6a1 1 0 012 0v13a1 1 0 01-1 1h-3v3a1 1 0 01-1.555.832L12.697 20H12a1 1 0 010-2h1a1 1 0 01.555.168L18 21.13V19a1 1 0 011-1h3zM4 16H1a1 1 0 01-1-1V2a1 1 0 011-1h18a1 1 0 011 1v13a1 1 0 01-1 1h-6.68l-6.739 4.814A1 1 0 014 20v-4zM18 3H2v11h3a1 1 0 011 1v3.057l5.419-3.87A1 1 0 0112 14h6V3z" fill="currentColor"/></symbol>
+<symbol id="microphone-1-18" viewBox="0 0 18 18"><path d="M8.5 11c1.966 0 3.5-1.507 3.5-3.429V4.43C12 2.507 10.466 1 8.5 1S5 2.507 5 4.429V7.57C5 9.493 6.534 11 8.5 11zm.5 3.984V17h3.39a.5.5 0 110 1H8.53a.508.508 0 01-.06 0H4.612a.5.5 0 110-1h3.39v-2.016A7.468 7.468 0 011 7.5a.5.5 0 011 0A6.47 6.47 0 008.5 14 6.47 6.47 0 0015 7.5a.5.5 0 111 0 7.468 7.468 0 01-7 7.484zM8.5 12C5.986 12 4 10.05 4 7.571V4.43C4 1.95 5.986 0 8.5 0 11.014 0 13 1.95 13 4.429V7.57C13 10.05 11.014 12 8.5 12z" fill="currentColor"/></symbol>
+<symbol id="microphone-1-24" viewBox="0 0 24 24"><path d="M12 14c2.248 0 4-1.752 4-4V6c0-2.248-1.752-4-4-4S8 3.752 8 6v4c0 2.248 1.752 4 4 4zm1 5.951V22h4a1 1 0 010 2H7a1 1 0 010-2h4v-2.049A9.959 9.959 0 012 10a1 1 0 112 0c0 4.448 3.552 8 8 8s8-3.552 8-8a1 1 0 012 0 9.959 9.959 0 01-9 9.951zM12 16c-3.352 0-6-2.648-6-6V6c0-3.352 2.648-6 6-6s6 2.648 6 6v4c0 3.352-2.648 6-6 6z" fill="currentColor"/></symbol>
+<symbol id="phone-1-18" viewBox="0 0 18 18"><path fill="currentColor" d="M4.265.054l-3.007.78A1.686 1.686 0 00.016 2.692a17.962 17.962 0 0015.29 15.29 1.684 1.684 0 001.86-1.242l.78-3.005a1.676 1.676 0 00-.942-1.954l-3.555-1.579-.141-.055a1.679 1.679 0 00-1.848.538l-1.112 1.388-.347-.225A14.11 14.11 0 016.15 8l-.226-.348 1.388-1.11a1.676 1.676 0 00.485-1.99L6.219.996A1.676 1.676 0 004.265.054zm1.04 1.348l1.579 3.555a.676.676 0 01-.196.803L4.957 7.145a.5.5 0 00-.119.644 15.11 15.11 0 005.373 5.373.5.5 0 00.644-.119l1.385-1.732a.678.678 0 01.803-.194l3.555 1.579a.676.676 0 01.38.788l-.78 3.005a.683.683 0 01-.754.504A16.962 16.962 0 011.006 2.555a.685.685 0 01.504-.754l3.006-.779a.677.677 0 01.79.38z"/></symbol>
+<symbol id="sparkle-1-24" viewBox="0 0 24 24"><path d="M7.02 3l-1.9-.63-.63-1.9c-.21-.61-1.22-.61-1.43 0l-.63 1.9L.53 3c-.31.1-.52.39-.52.71s.21.61.52.71l1.9.63.63 1.9c.1.31.39.52.72.52s.61-.21.72-.52l.63-1.9 1.9-.63c.31-.1.52-.39.52-.71S7.34 3.1 7.03 3zM12.83 24a1 1 0 01-.93-.63l-2.72-6.88-6.88-2.72a1 1 0 010-1.86l6.88-2.72 2.72-6.88a1 1 0 011.86 0l2.72 6.88 6.88 2.72a1 1 0 010 1.86l-6.88 2.72-2.72 6.88a1 1 0 01-.93.63zM5.39 12.83l4.93 1.95c.26.1.46.3.56.56l1.95 4.93 1.95-4.93c.1-.26.3-.46.56-.56l4.94-1.95-4.93-1.95c-.26-.1-.46-.3-.56-.56l-1.95-4.93-1.95 4.93c-.1.26-.3.46-.56.56L5.4 12.83z" fill="currentColor"/></symbol>
+<symbol id="trv-logo-2color-small" viewBox="0 0 147 30"><path d="M131.012 11.412v15.163A3.43 3.43 0 01127.586 30a3.43 3.43 0 01-3.254-2.354l-.002-.007a.928.928 0 01.894-1.178.93.93 0 01.882.632l.002.005a1.57 1.57 0 003.046-.523l-.002-15.191v-.004c0-.047.034-.084.08-.089h.007a7.963 7.963 0 011.689.015h.004a.089.089 0 01.079.088v.018zm-17.848-.143a.105.105 0 01-.153-.132l.005-.008C115.892 4.577 122.438 0 130.052 0c7.617 0 14.165 4.58 17.038 11.139l.002.007c.006.013.01.026.01.041a.105.105 0 01-.104.105.118.118 0 01-.05-.013l-.014-.005c-1.32-.778-3.162-1.26-5.201-1.26-2.354 0-4.446.643-5.773 1.64l-.006.005a.105.105 0 01-.128 0l-.005-.004c-1.33-.998-3.423-1.641-5.777-1.641-2.353 0-4.445.643-5.774 1.641l-.005.003a.107.107 0 01-.124.006l-.009-.008c-1.328-.998-3.423-1.642-5.777-1.642-2.03 0-3.863.477-5.18 1.248l-.011.007z" fill="#F50002"/><path d="M108.593 29.507l.43-2.687c.482.108 3.05.491 4.577.491 2.06 0 2.64-.356 2.819-2.017.17-1.52-.078-1.72-2.392-2.46-3.676-1.186-4.506-1.791-4.133-5.199.36-3.27 2.057-4.435 5.776-4.435 1.817 0 3.804.248 4.52.449l-.346 2.667c-.859-.137-2.995-.407-4.494-.407-1.659 0-2.22.428-2.366 1.75-.17 1.546.124 1.703 2.356 2.42 3.52 1.164 4.624 1.77 4.243 5.196-.394 3.583-2.06 4.705-6.32 4.705a22.91 22.91 0 01-4.67-.473zm-2.528.29h-3.096l-1.983-6.434h-2.513l-.712 6.434h-3.049l1.804-16.394h6.01c3.56 0 5.263.85 4.8 5.019-.308 2.846-1.415 3.986-3.382 4.545l2.12 6.83zm-4.533-9.034c1.437 0 2.416-.054 2.681-2.454.267-2.42-.837-2.305-2.226-2.305h-2.71l-.52 4.759h2.775zm-18.076-7.36h9.668l-.301 2.733h-6.55l-.431 3.897h5.312l-.304 2.768h-5.307l-.474 4.254h6.761l-.295 2.742h-9.88l1.8-16.395zm-3.553 13.652c-.384 1.737-1.14 2.742-2.886 2.742H69.26l1.804-16.394h3.114l-1.503 13.652h7.228zm-21.88-13.653h9.665l-.302 2.734h-6.55l-.428 3.897h5.312l-.308 2.768h-5.306l-.473 4.254h6.763l-.297 2.742h-9.882l1.806-16.395zm-16.09 0h3.225l2.232 11.981 4.713-11.98h3.116l-6.812 16.484h-3.16l-3.315-16.485zM30.43 29.797h-3.116l7.05-16.484h2.993l3.246 16.484h-3.202l-.508-2.731h-5.33l-1.133 2.731zm4.901-12.189l-2.7 6.884h3.783l-1.083-6.884zm-9.749 12.19h-3.07l-1.984-6.435h-2.54l-.71 6.434h-3.046l1.802-16.394h6.005c3.564 0 5.266.85 4.806 5.019-.313 2.846-1.417 3.986-3.382 4.545l2.12 6.83zM21.1 20.762c1.435 0 2.416-.054 2.678-2.454.267-2.42-.885-2.305-2.224-2.305h-2.758l-.527 4.759H21.1zM.302 13.403h13.373c-.383 1.734-1.14 2.743-2.885 2.743H8.217L6.738 29.797h-3.14L5.1 16.136H0l.302-2.734z"/></symbol>
+<symbol id="x-1-18" viewBox="0 0 18 18"><path d="M1.854 1.146L9 8.293l7.146-7.147a.5.5 0 01.638-.057l.07.057a.5.5 0 010 .708L9.707 9l7.147 7.146a.5.5 0 01-.708.708L9 9.707l-7.146 7.147a.5.5 0 01-.638.057l-.07-.057a.5.5 0 010-.708L8.293 9 1.146 1.854a.5.5 0 11.708-.708z" fill="currentColor"/></symbol>
+</svg>
 
-<div class="test-banner" role="note">
-  TEST PAGE for the SLM demo build (flow: Forward Deployed Demo). Not a Travelers production site. Offer copy and preview data are placeholders.
+<!-- Demo notice: keeps the page honest without competing with the experience. -->
+<div class="demo-bar" role="note">
+  <svg aria-hidden="true"><use href="#info-circle-1-18"></use></svg>
+  <span><strong>Demo environment.</strong> Not a live Travelers site. Quote details shown are sample data.</span>
 </div>
 
-<header class="site-header">
-  <div class="brand">
-    <span class="wordmark">TRAVELERS</span>
-    <span class="brand-divider" aria-hidden="true"></span>
-    <span class="brand-product">Auto Quote Assistant</span>
+<!-- TDS Global Header -->
+<header class="tds-global-header site-header" role="banner">
+  <div class="tds-global-header__wrapper">
+    <div class="tds-global-header__identity-block">
+      <span class="tds-global-header__identity">
+        <svg class="tds-global-header__logo" aria-hidden="true"><use href="#trv-logo-2color-small"></use></svg>
+        <span class="tds-sr-only">Travelers</span>
+        <span class="tds-global-header__product">Auto Quote Assistant</span>
+      </span>
+    </div>
+    <div class="header-actions">
+      <button class="tds-button--tertiary tds-button--small header-person" data-action="person" type="button">
+        <svg class="tds-button__icon--first" aria-hidden="true"><use href="#headset-1-18"></use></svg>Talk to a person
+      </button>
+    </div>
   </div>
-  <button class="link-btn header-person" data-action="person" type="button">Talk to a person</button>
 </header>
 
 <div class="app">
@@ -27,29 +57,44 @@
 
     <!-- Entry: shown until the customer picks how to start. -->
     <section class="offer" data-offer aria-labelledby="offer-title">
-      <p class="eyebrow">Your offer <span class="placeholder-tag">placeholder copy</span></p>
-      <h1 id="offer-title">Get your auto quote by talking it through, not filling out a form.</h1>
-      <p class="lede">AISA, our AI assistant, takes you through it. Upload your current declaration page and AISA only asks for what's still missing.</p>
-      <div class="start-options">
-        <button class="start-option" data-action="start-chat" type="button">
-          <span class="start-title">Chat with AISA</span>
-          <span class="start-sub">Type your answers</span>
-        </button>
-        <button class="start-option start-call" data-action="start-voice" type="button">
-          <span class="start-title"><span class="call-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></span>Talk with AISA</span>
-          <span class="start-sub">Like a phone call, right in your browser. No number to dial; uses your microphone.</span>
-          <span class="start-cta">Start call</span>
-        </button>
-        <button class="start-option" data-action="start-upload" type="button">
-          <span class="start-title">Upload my declaration page</span>
-          <span class="start-sub">A PDF or a photo of it. AISA fills in what it can.</span>
-        </button>
+      <span class="tds-tag tds-tag--static tds-tag--mint offer-tag">Auto insurance quote</span>
+      <h1 id="offer-title" class="tds-h1">Get your auto quote by talking it through, not filling out a form.</h1>
+      <p class="tds-large lede">AISA, our AI assistant, walks you through it. Share your current declaration page and AISA only asks for what's still missing.</p>
+
+      <h2 class="tds-h4 choose-title">How would you like to start?</h2>
+      <ul class="start-options" role="list">
+        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option start-call" data-clickable="#start-voice">
+          <div class="tds-card__body">
+            <svg class="start-icon" aria-hidden="true"><use href="#microphone-1-24"></use></svg>
+            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-voice" data-action="start-voice" type="button">Talk with AISA</button>
+            <p class="tds-small start-sub">Speak with AISA right here in your browser using your microphone. There's no number to dial.</p>
+            <span class="tds-tag tds-tag--static start-tag">Recommended</span>
+          </div>
+        </li>
+        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option" data-clickable="#start-chat">
+          <div class="tds-card__body">
+            <svg class="start-icon" aria-hidden="true"><use href="#messages-1-24"></use></svg>
+            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-chat" data-action="start-chat" type="button">Chat with AISA</button>
+            <p class="tds-small start-sub">Type your answers at your own pace. You can switch to talking at any time.</p>
+          </div>
+        </li>
+        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option" data-clickable="#start-upload">
+          <div class="tds-card__body">
+            <svg class="start-icon" aria-hidden="true"><use href="#documents-1-24"></use></svg>
+            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-upload" data-action="start-upload" type="button">Start with my declaration page</button>
+            <p class="tds-small start-sub">Upload a PDF or a photo. AISA fills in what it can, then asks only for what's missing.</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="tds-inline-alert--info disclosure">
+        <p>AISA is an AI assistant, not a licensed advisor. It can't give coverage or rate advice. This conversation may be monitored or recorded.</p>
       </div>
-      <p class="fineprint">AISA is an AI assistant, not a licensed advisor. It doesn't give coverage or rate advice. This conversation may be monitored or recorded.</p>
+
       <p class="connection" aria-label="Connection status">
-        <span data-chip="chat">Chat: <b>checking</b></span>
-        <span data-chip="voice">Voice: <b>checking</b></span>
-        <span>Quote ref: <b data-quote-id></b></span>
+        <span data-chip="chat">Chat <b>checking</b></span>
+        <span data-chip="voice">Voice <b>checking</b></span>
+        <span class="quote-ref">Quote reference <b data-quote-id></b></span>
       </p>
     </section>
 
@@ -57,10 +102,10 @@
     <div class="typing" data-typing hidden aria-label="AISA is typing"><span></span><span></span><span></span></div>
 
     <div class="composer" data-composer>
-      <!-- Browser voice looks like a phone call: who you're talking to, call state and timer, round controls. -->
+      <!-- Browser voice: who you're talking to, call state and timer, and the two call controls. -->
       <div class="call-card" data-call-card role="group" aria-label="Voice call with AISA">
         <div class="call-who">
-          <span class="call-avatar" aria-hidden="true">AI</span>
+          <span class="call-avatar" aria-hidden="true"><svg><use href="#sparkle-1-24"></use></svg></span>
           <span class="call-meta">
             <b>AISA</b>
             <span class="call-sub">
@@ -70,31 +115,35 @@
           </span>
         </div>
         <div class="call-controls">
-          <button class="call-btn" data-action="mute" type="button" aria-pressed="false">
-            <span class="call-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg></span><span data-mute-label>Mute</span>
+          <button class="tds-button--secondary tds-button--small call-btn" data-action="mute" type="button" aria-pressed="false">
+            <svg class="tds-button__icon--first" aria-hidden="true"><use href="#microphone-1-18"></use></svg><span data-mute-label>Mute</span>
           </button>
-          <button class="call-btn call-end" data-action="hang-up" type="button" title="End the call and keep going in chat">
-            <span class="call-btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></span><span>End call</span>
+          <button class="tds-button--primary tds-button--small call-btn call-end" data-action="hang-up" type="button" title="End the call and keep going in chat">
+            <svg class="tds-button__icon--first" aria-hidden="true"><use href="#phone-1-18"></use></svg><span>End call</span>
           </button>
         </div>
       </div>
-      <div class="call-line">
-        <button class="btn-call" data-action="switch-voice" type="button"><span class="call-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></span>Switch to a call</button>
-        <button class="link-btn" data-action="person" type="button">Talk to a person</button>
-      </div>
+
       <form class="composer-row" data-composer-form>
-        <label class="visually-hidden" for="composer-input">Your answer</label>
-        <button class="attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF)">
-          <svg class="attach-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11 8 15.01z"/></svg>
-          <svg class="attach-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-          <span class="attach-spin" aria-hidden="true"></span>
-          <span class="attach-label" data-attach-label>Upload document</span>
-          <span class="attach-count" data-attach-count hidden></span>
-        </button>
-        <textarea id="composer-input" data-composer-input rows="2" placeholder="Type your answer, or tell me anything else about your quote…"></textarea>
-        <button class="btn btn-primary" type="submit">Ask AISA</button>
+        <div class="tds-field composer-field">
+          <label class="tds-field__label visually-hidden" for="composer-input">Your answer</label>
+          <textarea id="composer-input" class="tds-field__input" data-composer-input rows="2" placeholder="Type your answer, or ask AISA anything about your quote"></textarea>
+        </div>
+        <div class="composer-actions">
+          <button class="attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF)">
+            <svg class="attach-icon" aria-hidden="true"><use href="#documents-1-18"></use></svg>
+            <svg class="attach-done" aria-hidden="true"><use href="#check-1-18"></use></svg>
+            <span class="attach-spin" aria-hidden="true"></span>
+            <span class="attach-label" data-attach-label>Upload document</span>
+            <span class="attach-count" data-attach-count hidden></span>
+          </button>
+          <button class="tds-button--secondary tds-button--small btn-call" data-action="switch-voice" type="button">
+            <svg class="tds-button__icon--first" aria-hidden="true"><use href="#microphone-1-18"></use></svg>Talk instead
+          </button>
+          <button class="tds-button--primary composer-send" type="submit">Ask AISA</button>
+        </div>
       </form>
-      <p class="fineprint composer-note">AISA is an AI assistant, not a licensed advisor. This conversation may be monitored or recorded.</p>
+      <p class="tds-small composer-note">AISA is an AI assistant, not a licensed advisor. This conversation may be monitored or recorded.</p>
     </div>
   </main>
 
@@ -104,16 +153,19 @@
     </button>
     <div class="panel-inner" id="quote-panel-inner">
       <div class="panel-head">
-        <h2 id="quote-title">Your quote</h2>
-        <span class="pill" data-status hidden></span>
-        <span class="pill pill-eff" data-eff hidden aria-live="polite"></span>
-        <span class="pill pill-preview" data-preview hidden>Preview data</span>
-        <button class="icon-btn" data-action="toggle-panel" type="button" aria-label="Hide quote">&times;</button>
+        <h2 id="quote-title" class="tds-h3">Your quote</h2>
+        <span class="tds-tag tds-tag--static pill" data-status hidden></span>
+        <span class="tds-tag tds-tag--static tds-tag--mint pill pill-eff" data-eff hidden aria-live="polite"></span>
+        <span class="tds-tag tds-tag--static tds-tag--mustard pill pill-preview" data-preview hidden>Sample data</span>
+        <button class="icon-btn" data-action="toggle-panel" type="button" aria-label="Hide quote">
+          <svg aria-hidden="true"><use href="#x-1-18"></use></svg>
+        </button>
       </div>
       <div class="progress" role="progressbar" aria-label="Quote steps" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
         <div class="progress-bar" data-progress></div>
       </div>
       <p class="step-label" data-step-label>Step 1/7: About You</p>
+      <ol class="step-list" data-step-list aria-label="Quote steps"></ol>
       <!-- Advisor handoff: stays at the top of the panel on every step and after a call ends, until dismissed. -->
       <section class="xapp-card advisor-card" data-advisor-card hidden aria-label="Shared with your licensed advisor">
         <div class="card-head">
@@ -138,5 +190,13 @@
 </div>
 
 <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+<script>
+  // TDS clickable cards: a click anywhere on the card presses its button (TDS JS isn't loaded on this page).
+  document.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-clickable]");
+    if (!card || e.target.closest("button, a")) return;
+    document.querySelector(card.dataset.clickable)?.click();
+  });
+</script>
 </body>
 </html>

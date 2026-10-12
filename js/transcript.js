@@ -74,10 +74,48 @@ export function createTranscript(root, { onChoice }) {
     lastChoices = null;
   }
 
+  // "Select all that apply": toggle buttons (aria-pressed), "None of these" clears the rest, and Done sends the ticked
+  // labels (an empty list for "None of these"). Done stays disabled until something is chosen.
+  function showMulti(set, onPick) {
+    const picked = new Set();
+    let none = false;
+    const toggles = set.options.map((value) => {
+      const b = el("button", { class: "choice choice-toggle", type: "button", "aria-pressed": "false" }, value);
+      b.addEventListener("click", () => {
+        if (picked.has(value)) picked.delete(value); else picked.add(value);
+        none = false;
+        sync();
+      });
+      return b;
+    });
+    const noneBtn = el("button", { class: "choice choice-toggle", type: "button", "aria-pressed": "false" }, set.none);
+    noneBtn.addEventListener("click", () => {
+      none = !none;
+      if (none) picked.clear();
+      sync();
+    });
+    const done = el("button", { class: "choice choice-primary", type: "button", disabled: "" }, "Done");
+    done.addEventListener("click", () => {
+      if (!picked.size && !none) return;
+      offered = null;
+      clearChoices();
+      onPick(set.options.filter((o) => picked.has(o)));
+    });
+    function sync() {
+      toggles.forEach((b, i) => b.setAttribute("aria-pressed", String(picked.has(set.options[i]))));
+      noneBtn.setAttribute("aria-pressed", String(none));
+      done.disabled = !picked.size && !none;
+    }
+    lastChoices = el("div", { class: "choices choices-multi", role: "group", "aria-label": (set.label || "Choose") + ", select all that apply" },
+      el("span", { class: "choices-hint" }, "Select all that apply"), ...toggles, noneBtn, done);
+    list.append(lastChoices);
+  }
+
   function showOffered() {
     if (!offered) return;
     const { set, onPick } = offered;
     clearChoices();
+    if (set.multi) return showMulti(set, onPick);
     lastChoices = el("div", { class: "choices", role: "group", "aria-label": set.label || "Choose an answer" },
       ...set.options.map((value) => {
         const b = el("button", { class: "choice", type: "button" }, value);
@@ -119,9 +157,10 @@ export function createTranscript(root, { onChoice }) {
         ? el("span", { class: "msg-avatar", "aria-hidden": "true" }, "AI")
         : null;
       const tag = via === "voice" ? el("span", { class: "msg-via" }, "spoken") : null;
-      const body = el("div", { class: "msg-body" }, ...(text ? (from === "bot" ? formatText(text) : [el("p", { class: "msg-text" }, text)]) : []));
-      const bubble = el("div", { class: `msg msg-${from}` },
-        el("div", { class: "msg-who" }, badge, who, tag),
+      const body = el("div", { class: "msg-body tds-chat__message-content" }, ...(text ? (from === "bot" ? formatText(text) : [el("p", { class: "msg-text" }, text)]) : []));
+      // TDS chat message: plain for AISA (long replies), bubble for the customer (TDS AI & Chat guidance).
+      const bubble = el("div", { class: `msg msg-${from} tds-chat__message${from === "user" ? " tds-chat__message--bubble" : ""}` },
+        el("div", { class: "msg-who tds-chat__message-header" }, badge, el("span", { class: "tds-chat__message-name" }, who), tag),
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
