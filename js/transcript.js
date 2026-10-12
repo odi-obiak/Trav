@@ -169,7 +169,16 @@ export function createTranscript(root, { onChoice }) {
     list.append(lastChoices);
   }
 
+  // The buttons wait for AISA's reply (2026-10-12, Odiche: they showed up before the question). The flow sends them just
+  // before the AI Agent speaks, so they are drawn when AISA's reply for this turn arrives (add() calls showOffered), or
+  // after a short wait if no reply comes, so they never go missing.
+  let lastUserAt = 0;
+  let lastBotAt = 0;
+  let holdTimer = null;
+  const HOLD_MS = 6000;
   function showOffered() {
+    clearTimeout(holdTimer);
+    holdTimer = null;
     if (!offered) return;
     const { set, onPick } = offered;
     clearChoices();
@@ -199,6 +208,7 @@ export function createTranscript(root, { onChoice }) {
         open.text = open.ack && open.pieces === 1 && !/\?\s*$/.test(open.text) ? open.text + "\n" + piece : joinPiece(open.text, piece);
         open.pieces += 1;
         open.at = now;
+        lastBotAt = now;
         open.body.replaceChildren(...formatText(open.text));
         const h = history[history.length - 1];
         if (h && h.from === "aisa") h.text = open.text.slice(0, 600);
@@ -208,7 +218,7 @@ export function createTranscript(root, { onChoice }) {
         return;
       }
       clearChoices();
-      if (from === "user") { offered = null; ackUntil = 0; }
+      if (from === "user") { offered = null; ackUntil = 0; lastUserAt = now; clearTimeout(holdTimer); }
       // Only AISA's own reply (the AI Agent's, which has a message id on chat) can carry it, not a flow message before it.
       const ack = from === "bot" && !!text && !image && (channel === "voice" || !!mid) && Date.now() < ackUntil;
       if (ack) ackUntil = 0;
@@ -225,6 +235,7 @@ export function createTranscript(root, { onChoice }) {
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
+      if (from === "bot" && text) lastBotAt = now;
       open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now, mid: mid || null, ack, pieces: 1 } : null;
       if (choices.length) {
         lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Suggested replies" },
@@ -244,7 +255,10 @@ export function createTranscript(root, { onChoice }) {
     offer(set, onPick) {
       offered = set && ((Array.isArray(set.options) && set.options.length) || (Array.isArray(set.rows) && set.rows.length)) ? { set, onPick } : null;
       clearChoices();
-      showOffered();
+      clearTimeout(holdTimer);
+      // AISA already answered this turn (e.g. the buttons came after the reply): show them now. Otherwise wait for it.
+      if (!offered || lastBotAt > lastUserAt) showOffered();
+      else holdTimer = setTimeout(() => { showOffered(); scroll(); }, HOLD_MS);
       scroll();
     },
     // Buttons with no bubble, e.g. "Share document" when AISA asks for a file.
