@@ -118,6 +118,7 @@ export const PREVIEW_SCRIPT = [
   {
     via: "voice",
     ui: { fields: [
+      { key: "lossHistory.hasLosses", label: "Any accidents, tickets or claims?", section: "losses", order: 60, value: "Yes", source: "customer" },
       { key: "loss[0].type", label: "What happened?", value: "Other claim", source: "customer" },
       { key: "loss[0].description", label: "Description", value: "Windshield / glass", source: "customer" },
       { key: "loss[0].injuries", label: "Was anyone injured?", value: "No", source: "customer" },

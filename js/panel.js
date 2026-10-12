@@ -133,8 +133,12 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       return { node: card, rows };
     }
     if (step.entity) {
+      // A question about the whole step ("Any accidents, tickets or claims?") belongs to no vehicle, driver or incident:
+      // it goes first, with no heading.
+      const general = rows.filter((f) => !/\[\d+\]/.test(f.key));
+      if (general.length) card.append(el("dl", { class: "review-list" }, ...general.map(row)));
       const groups = new Map();
-      for (const f of rows) {
+      for (const f of rows.filter((x) => /\[\d+\]/.test(x.key))) {
         const i = entityOf(f.key);
         if (!groups.has(i)) groups.set(i, []);
         groups.get(i).push(f);

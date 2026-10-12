@@ -174,6 +174,9 @@ export function createTranscript(root, { onChoice }) {
 
   // The open AISA bubble that the next piece of the same reply can join.
   let open = null;
+  // The flow says when an acknowledgement (7B rapport, "I see you recently moved...") may open AISA's next reply
+  // (aisa_ui.ack). The stream drops line breaks, so that opening sentence is given its own line here (Odiche, 2026-10-12).
+  let ackUntil = 0;
 
   return {
     add({ from, text, choices = [], via, image, mid }) {
@@ -182,7 +185,10 @@ export function createTranscript(root, { onChoice }) {
       const samePiece = channel === "voice" ? now - (open ? open.at : 0) < MERGE_WINDOW_MS.voice : !!mid && open && open.mid === mid;
       if (from === "bot" && text && !image && open && open.via === channel && list.lastElementChild === open.bubble && samePiece) {
         clearChoices();
-        open.text = joinPiece(open.text, String(text).trim());
+        const piece = String(text).trim();
+        // The acknowledgement is the reply's first sentence, a statement; a reply that opens with a question has none.
+        open.text = open.ack && open.pieces === 1 && !/\?\s*$/.test(open.text) ? open.text + "\n" + piece : joinPiece(open.text, piece);
+        open.pieces += 1;
         open.at = now;
         open.body.replaceChildren(...formatText(open.text));
         const h = history[history.length - 1];
@@ -193,7 +199,10 @@ export function createTranscript(root, { onChoice }) {
         return;
       }
       clearChoices();
-      if (from === "user") offered = null;
+      if (from === "user") { offered = null; ackUntil = 0; }
+      // Only AISA's own reply (the AI Agent's, which has a message id on chat) can carry it, not a flow message before it.
+      const ack = from === "bot" && !!text && !image && (channel === "voice" || !!mid) && Date.now() < ackUntil;
+      if (ack) ackUntil = 0;
       if (text) history.push({ from: from === "user" ? "customer" : "aisa", text: String(text).slice(0, 600), via: channel });
       const who = from === "user" ? "You" : "AISA";
       const badge = from === "bot"
@@ -207,7 +216,7 @@ export function createTranscript(root, { onChoice }) {
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);
-      open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now, mid: mid || null } : null;
+      open = from === "bot" && text && !image ? { bubble, body, text: String(text).trim(), via: channel, at: now, mid: mid || null, ack, pieces: 1 } : null;
       if (choices.length) {
         lastChoices = el("div", { class: "choices", role: "group", "aria-label": "Suggested replies" },
           ...choices.map((c) => {
@@ -244,6 +253,8 @@ export function createTranscript(root, { onChoice }) {
       list.append(lastChoices);
       scroll();
     },
+    // aisa_ui.ack: the next AISA reply may open with an acknowledgement (see ackUntil).
+    expectAck() { ackUntil = Date.now() + 60000; },
     note(text) {
       open = null;
       list.append(el("p", { class: "msg-note", role: "status" }, text));

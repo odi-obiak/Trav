@@ -57,6 +57,7 @@ const chat = createChat({
   identity,
   onMessage: (m) => transcript.add(m),
   onUi: (ui) => {
+    if (ui && ui.ack === true) transcript.expectAck();
     store.applyUi(ui);
   },
   onStatus: (s) => setChip("chat", s),
@@ -100,7 +101,7 @@ const voice = createVoice({
   identity,
   onReady: resendScreen,
   onMessage: (m) => transcript.add(m),
-  onUi: (ui) => store.applyUi(ui),
+  onUi: (ui) => { if (ui && ui.ack === true) transcript.expectAck(); store.applyUi(ui); },
   onStatus: (s) => {
     setChip("voice", s);
     document.body.classList.toggle("voice-connecting", s === "connecting");
