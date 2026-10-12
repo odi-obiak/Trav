@@ -25,7 +25,7 @@ const entry = {
   landedAt: new Date().toISOString(),
   // This page shows aisa_ui.choices as buttons, so the flow can stop naming every option in AISA's text (and on a call,
   // point to the screen instead of reading a list). An older page leaves this out and keeps the spoken or typed options.
-  ui: { choices: true },
+  ui: { choices: true, multiChoices: true }, // multiChoices: tick boxes for "select all that apply" (2026-10-11)
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -416,7 +416,11 @@ store.subscribe((state) => {
   // saves it in code and accepts only an option it just offered (turn_router.js "choice").
   if (state.choices !== lastChoices) {
     lastChoices = state.choices;
-    transcript.offer(state.choices, (value) => sendEvent(value, { aisa_event: { type: "choice", path: state.choices.path, value, quoteId } }));
+    const set = state.choices;
+    transcript.offer(set, (value) => set.multi
+      // Ticked labels (empty for "None of these"); the flow saves every listed feature (turn_router.js "choice").
+      ? sendEvent(value.length ? value.join(", ") : set.none, { aisa_event: { type: "choice", path: set.path, values: value, quoteId } })
+      : sendEvent(value, { aisa_event: { type: "choice", path: set.path, value, quoteId } }));
   }
   lastNotice = state.notice;
 });

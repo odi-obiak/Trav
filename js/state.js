@@ -92,7 +92,11 @@ export function createStore() {
 function readChoices(c) {
   if (!c || typeof c !== "object" || typeof c.path !== "string" || !Array.isArray(c.options)) return null;
   const options = c.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12);
-  return options.length ? { path: c.path, label: typeof c.label === "string" ? c.label : "", options } : null;
+  if (!options.length) return null;
+  const set = { path: c.path, label: typeof c.label === "string" ? c.label : "", options };
+  // "Select all that apply" (2026-10-11): tick boxes plus a "none" option, answered with one Done.
+  if (c.multi === true) Object.assign(set, { multi: true, none: typeof c.none === "string" && c.none.length <= 60 ? c.none : "None of these" });
+  return set;
 }
 
 // Accepts the shapes Cognigy may deliver: bare object, JSON string, wrapped in data/payload/body/info.

@@ -48,7 +48,8 @@ export const PREVIEW_SCRIPT = [
         { key: "policy.priorCarrier", label: "Current Auto Insurance Company", value: "Example Mutual", source: "extracted" },
       ],
       // PLACEHOLDER counts and wording (real ones come from the flow's rules.copy).
-      efficiency: { total: 31, asked: 6, filled: 11, fromDoc: 9, fromRecords: 1, fromAnswers: 1, chip: "11 filled for you",
+      efficiency: { total: 31, asked: 6, filled: 11, fromDoc: 9, fromRecords: 1, fromAnswers: 1, chip: "11 filled for you · about 1 min saved",
+        chipNote: "Estimate: about 7 seconds per answer in chat and 16 on a call, measured in testing.",
         line: "AISA filled in 11 of 31 answers, so you only answered 6.", detail: "9 from your document, 1 from records, 1 reused from your earlier answers." },
     },
     bot: "Thanks. Your document shows a 2021 Ford Escape, with you and Jane Smith as drivers. I've filled those in, so I won't ask for them again.",
@@ -63,8 +64,14 @@ export const PREVIEW_SCRIPT = [
     bot: "Congratulations on the new RAV4. I've added it as your second vehicle. Is it owned, financed, or leased?",
     choices: [{ title: "Owned", payload: "Owned" }, { title: "Financed", payload: "Financed" }, { title: "Leased", payload: "Leased" }],
   },
-  { channel: "voice", note: "Switched to voice. Everything so far is kept.", wait: 1600 },
-  { user: "It's financed.", via: "voice", wait: 1600 },
+  { user: "Financed", wait: 1600 },
+  {
+    // "Select all that apply" (rules.selectSets): shown only when two or more features apply in the quote's state.
+    ui: { choices: { path: "vehicles.v2.features", label: "Vehicle features", options: ["Automatic emergency braking", "Anti-lock brakes"], multi: true, none: "None of these" } },
+    bot: "Does the RAV4 have any of these?",
+  },
+  { channel: "voice", note: "Switched to voice. Everything so far is kept.", wait: 9000 },
+  { user: "Just the emergency braking.", via: "voice", wait: 1600 },
   {
     via: "voice",
     ui: {
