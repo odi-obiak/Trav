@@ -115,23 +115,29 @@ export function createTranscript(root, { onChoice }) {
   // can be picked (aria-pressed, tap again to clear) and Done sends { rowPath: option } for the rows answered. A single
   // row needs no Done: a tap answers it.
   function showRows(set, onPick) {
-    if (set.rows.length === 1) {
+    if (set.rows.length === 1 && !set.rows[0].multi) {
       const r = set.rows[0];
       return showSingle({ path: r.path, label: r.label, options: r.options }, (value) => onPick({ [r.path]: value }));
     }
     const picked = {};
     const done = el("button", { class: "choice choice-primary", type: "button", disabled: "" }, "Done");
     const rowEls = set.rows.map((r) => {
+      // A pick-several row (multi, e.g. Travelers policies): any number of options, sent as "Auto, Homeowners".
+      const isOn = (value) => (r.multi ? (picked[r.path] || "").split(", ").includes(value) : picked[r.path] === value);
       const buttons = r.options.map((value) => {
         const b = el("button", { class: "choice choice-toggle", type: "button", "aria-pressed": "false" }, value);
         b.addEventListener("click", () => {
-          picked[r.path] = picked[r.path] === value ? undefined : value;
-          buttons.forEach((x, i) => x.setAttribute("aria-pressed", String(picked[r.path] === r.options[i])));
+          if (r.multi) {
+            const on = (picked[r.path] || "").split(", ").filter(Boolean);
+            const next = on.includes(value) ? on.filter((x) => x !== value) : on.concat(value);
+            picked[r.path] = next.length ? r.options.filter((o) => next.includes(o)).join(", ") : undefined;
+          } else picked[r.path] = picked[r.path] === value ? undefined : value;
+          buttons.forEach((x, i) => x.setAttribute("aria-pressed", String(isOn(r.options[i]))));
           done.disabled = !set.rows.some((row) => picked[row.path]);
         });
         return b;
       });
-      const label = r.label || "Choose one";
+      const label = (r.label || "Choose one") + (r.multi ? " (pick any)" : "");
       return el("div", { class: "choice-row", role: "group", "aria-label": label },
         el("span", { class: "choice-row__label" }, label), el("div", { class: "choice-row__options" }, ...buttons));
     });

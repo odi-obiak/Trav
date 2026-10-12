@@ -89,9 +89,7 @@ body:not(.in-conversation) .conversation { overflow-y: auto; }
 .start-icon { width: 32px; height: 32px; color: var(--blue); fill: currentColor !important; }
 .start-title { margin: 0; text-align: left; }
 .start-sub { margin: 0; color: var(--muted); }
-.start-tag { align-self: flex-start; margin-top: auto; }
 .start-call { box-shadow: inset 0 4px 0 var(--red), var(--shadow-card); }
-.disclosure { max-width: 72ch; margin-bottom: 16px; }
 .connection { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; font-size: 0.8125rem; color: var(--muted); }
 .connection b { font-weight: 600; color: var(--ink); text-transform: capitalize; }
 .quote-ref b { text-transform: none; font-variant-numeric: tabular-nums; }
@@ -413,7 +411,6 @@ body.panel-hidden .panel-inner { display: none; }
   .start-options { grid-template-columns: minmax(0, 1fr); }
   .start-option .tds-card__body { display: grid; grid-template-columns: 32px 1fr; column-gap: 14px; row-gap: 4px; }
   .start-icon { grid-row: span 3; }
-  .start-tag { margin-top: 4px; justify-self: start; }
 }
 @media (max-width: 900px) {
   body { height: auto; min-height: 100%; }
