@@ -3,7 +3,8 @@
 import { DEFAULT_CATALOG, readCatalog, stepIdForKey } from "./catalog.js";
 
 // Where a value came from (customer, extracted, prefilled, derived). Wording comes from the catalog's sourceTags.
-const SOURCE_IDS = ["customer", "extracted", "prefilled", "derived"];
+// decoded: from a VIN lookup (_VIN_Decode, 2026-10-12).
+const SOURCE_IDS = ["customer", "extracted", "decoded", "prefilled", "derived"];
 
 const STATUSES = ["collecting", "quote_ready", "rating", "advisor_requested"];
 

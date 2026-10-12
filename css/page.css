@@ -333,6 +333,7 @@ body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: n
 .src-tag { white-space: nowrap; font-size: 0.6875rem; font-weight: 600; line-height: 1.4; border-radius: 999px; padding: 1px 8px; border: 1px solid transparent; }
 .src-extracted { background: var(--navy-l5); color: var(--navy); border-color: var(--navy-l4); }
 .src-prefilled { background: var(--amber-soft); color: var(--amber); border-color: rgb(240, 214, 150); }
+.src-decoded { background: var(--green-soft); color: var(--green); border-color: rgb(178, 217, 199); } /* VIN lookup (2026-10-12) */
 .src-check { background: var(--red-soft); color: var(--red-dark); border-color: rgb(245, 180, 180); }
 .src-customer, .src-derived { background: var(--bg-soft); color: var(--muted); border-color: var(--line); }
 

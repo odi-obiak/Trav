@@ -19,6 +19,7 @@ export const DEFAULT_CATALOG = {
   sourceTags: {
     customer: { short: "You", long: "You told us" },
     extracted: { short: "Document", long: "From your document" },
+    decoded: { short: "VIN", long: "From your VIN" },
     prefilled: { short: "Records", long: "From our records" },
     derived: { short: "Same as you", long: "From your answers" },
   },
