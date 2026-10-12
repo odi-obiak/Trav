@@ -189,7 +189,10 @@ export function createTranscript(root, { onChoice }) {
       const channel = via || "chat";
       const now = Date.now();
       const samePiece = channel === "voice" ? now - (open ? open.at : 0) < MERGE_WINDOW_MS.voice : !!mid && open && open.mid === mid;
-      if (from === "bot" && text && !image && open && open.via === channel && list.lastElementChild === open.bubble && samePiece) {
+      // The question's buttons are drawn right after the first piece, so the bubble may sit just before them (2026-10-12:
+      // otherwise every sentence after the first became a new "AISA" bubble whenever buttons were showing).
+      const tail = list.lastElementChild === lastChoices && lastChoices ? lastChoices.previousElementSibling : list.lastElementChild;
+      if (from === "bot" && text && !image && open && open.via === channel && tail === open.bubble && samePiece) {
         clearChoices();
         const piece = String(text).trim();
         // The acknowledgement is the reply's first sentence, a statement; a reply that opens with a question has none.
