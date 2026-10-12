@@ -227,9 +227,63 @@ function talkToPerson() {
 // ---- Declaration page (Step 3): AISA opens an upload screen (xApp) in the panel, on chat and voice alike. The screen
 // uploads the file straight to the bucket; the page never handles the document. These buttons only ask for the screen.
 async function requestUpload() {
+  if (attachBusy()) return;
+  setAttachPhase("opening", 12000);
   enterConversation();
   if (store.get().channel === "idle") return startChat("upload_dec_page");
   return sendEvent(CONFIG.uploadText, { aisa_event: { type: "upload_requested", quoteId } });
+}
+
+// ---- Upload button (2026-10-11): the one labelled way to share a document, in chat and during a call. It shows what is
+// happening (opening the screen, uploading, reading), how many documents were read, and draws the eye once when AISA
+// offers the upload (aisa_ui.documents.offer). The phases are page-side only and always time out, so the button can
+// never stay stuck if an update is lost.
+const attachBtn = $("[data-attach]");
+let attachPhase = null; // "opening" | "uploading" | "reading" | null
+let attachTimer = null;
+const attachBusy = () => attachPhase !== null;
+function setAttachPhase(phase, ms) {
+  attachPhase = phase;
+  clearTimeout(attachTimer);
+  if (phase && ms) attachTimer = setTimeout(() => setAttachPhase(null), ms);
+  renderAttach();
+}
+const ATTACH_LABEL = { opening: "Opening upload…", uploading: "Uploading…", reading: "Reading document…" };
+function renderAttach() {
+  const read = (store.get().documents || {}).read || 0;
+  const busy = attachBusy();
+  const label = ATTACH_LABEL[attachPhase] || (read ? "Add another document" : "Upload document");
+  attachBtn.querySelector("[data-attach-label]").textContent = label;
+  attachBtn.setAttribute("aria-busy", String(busy));
+  attachBtn.dataset.state = busy ? "busy" : read ? "done" : "idle";
+  attachBtn.setAttribute("aria-label", busy ? label : read ? `Add another document. ${read} document${read === 1 ? "" : "s"} read so far.` : "Upload a document, photo or PDF");
+  const count = attachBtn.querySelector("[data-attach-count]");
+  count.hidden = !read || busy;
+  count.textContent = String(read); // " read" is added by CSS, dropped on phones
+}
+function pulseAttach() {
+  if (attachBusy()) return;
+  attachBtn.classList.remove("attach-pulse");
+  void attachBtn.offsetWidth; // restart the animation if it is already running
+  attachBtn.classList.add("attach-pulse");
+  setTimeout(() => attachBtn.classList.remove("attach-pulse"), 4000);
+}
+let lastDocs = null;
+let lastXappUrl = null;
+function followAttach(state) {
+  if (state.xappUrl !== lastXappUrl) {
+    if (state.xappUrl && attachPhase === "opening") setAttachPhase(null); // the screen is up
+    if (!state.xappUrl && attachPhase) setAttachPhase(null); // the screen closed (read, unreadable, or dismissed)
+    lastXappUrl = state.xappUrl;
+  }
+  const docs = state.documents;
+  if (docs !== lastDocs) {
+    const before = (lastDocs && lastDocs.read) || 0;
+    if (docs && (docs.read > before || docs.status === "unreadable") && attachPhase === "reading") setAttachPhase(null);
+    if (docs && docs.offer && !state.xappUrl) pulseAttach(); // never while the upload screen is already showing
+    lastDocs = docs;
+  }
+  renderAttach();
 }
 
 // ---- Panel
@@ -293,6 +347,9 @@ window.addEventListener("message", (event) => {
     const upload = { status: m.status, kind: m.kind === "pdf" || m.kind === "photo" ? m.kind : null, error: UPLOAD_ERRORS.includes(m.error) ? m.error : null };
     // On a call the customer may not be watching the screen, so a failure goes out at once and AISA says so.
     screen.report({ upload }, { urgent: m.status === "failed" && voice.inCall });
+    if (m.status === "preparing" || m.status === "uploading") setAttachPhase("uploading", 90000);
+    else if (m.status === "uploaded") setAttachPhase("reading", 60000);
+    else if (m.status === "failed" || m.status === "declined") setAttachPhase(null);
     // The screen submits right after this, and the xApp shell then shows an empty page: show progress instead. The
     // flow closes the card once the page is read (or found unreadable), which clears this.
     if (m.status === "uploaded") {
@@ -351,6 +408,7 @@ store.subscribe((state) => {
     xappKindUrl = state.xappUrl;
   }
   panel.render(state);
+  followAttach(state);
   document.body.dataset.channel = state.channel;
   $("[data-preview]").hidden = !state.preview;
   if (state.notice && state.notice !== lastNotice) transcript.note(state.notice);

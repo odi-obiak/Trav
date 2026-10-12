@@ -189,15 +189,49 @@ body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: n
 body[data-channel="voice"] [data-action="switch-voice"] { display: none; }
 @media (prefers-reduced-motion: reduce) { .call-bars i, body.voice-connecting .call-avatar::after { animation: none; } }
 .composer-row { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: end; }
+/* Upload button (2026-10-11): labelled, one entry point, shows its own progress; stays available during a call. */
 .attach-btn {
-  display: grid; place-items: center; width: 44px; height: 56px; cursor: pointer; background: #fff;
-  border: 1px solid #9aa1ab; border-radius: 3px; color: var(--navy);
+  position: relative; display: inline-flex; align-items: center; gap: 8px; height: 56px; padding: 0 14px 0 12px;
+  font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  background: #fff; color: var(--navy); border: 1.5px solid var(--navy-soft); border-radius: 8px;
+  transition: background-color 0.15s, border-color 0.15s;
 }
-.attach-btn svg { width: 22px; height: 22px; fill: currentColor; }
-.attach-btn:hover { background: var(--blue-soft); }
+.attach-btn svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
+.attach-btn:hover { background: var(--blue-soft); border-color: var(--blue); }
 .attach-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.attach-btn[aria-busy="true"] { opacity: 0.5; cursor: progress; }
-body[data-channel="voice"] .attach-btn { display: none; }
+.attach-done, .attach-spin { display: none; }
+.attach-btn[aria-busy="true"] { cursor: progress; color: var(--muted); border-color: var(--line); background: var(--panel-bg); }
+.attach-btn[aria-busy="true"] .attach-icon { display: none; }
+.attach-btn[aria-busy="true"] .attach-spin {
+  display: block; width: 18px; height: 18px; margin: 2px; border-radius: 50%;
+  border: 2.5px solid var(--line); border-top-color: var(--blue); animation: attach-spin 0.8s linear infinite;
+}
+.attach-count {
+  display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--green); background: #e8f4ee;
+}
+.attach-count::before { content: "\2713"; }
+.attach-count::after { content: " read"; }
+.attach-count[hidden] { display: none; }
+.attach-pulse { animation: attach-pulse 1.3s ease-out 3; border-color: var(--blue); }
+@keyframes attach-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(31, 95, 168, 0.45); }
+  100% { box-shadow: 0 0 0 12px rgba(31, 95, 168, 0); }
+}
+@keyframes attach-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .attach-pulse { animation: none; box-shadow: 0 0 0 3px rgba(31, 95, 168, 0.35); }
+  .attach-btn[aria-busy="true"] .attach-spin { animation: none; border-top-color: var(--line); }
+}
+/* A narrow chat column (phones, or a small window next to the quote panel): the icon alone, and the count becomes a
+   small badge on its corner, so the text box keeps its room. */
+.composer-row { container-type: inline-size; }
+@container (max-width: 600px) {
+  .attach-btn { width: 48px; padding: 0; justify-content: center; }
+  .attach-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .attach-count { position: absolute; top: -7px; right: -7px; padding: 1px 6px; font-size: 11px; border: 1.5px solid #fff; }
+  .attach-count::before, .attach-count::after { content: none; }
+}
 .msg-image { display: block; max-width: min(260px, 100%); max-height: 260px; margin-top: 6px; border-radius: 4px; border: 1px solid var(--user-line); }
 .composer-row textarea {
   font: inherit; font-size: 15px; resize: none; width: 100%; padding: 12px 14px;

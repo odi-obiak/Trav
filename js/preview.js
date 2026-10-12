@@ -23,7 +23,7 @@ export const PREVIEW_SCRIPT = [
       { key: "client.city", label: "City", value: "Hartford", source: "customer" },
       { key: "client.state", label: "State", value: "CT", source: "customer" },
       { key: "client.zip", label: "ZIP", value: "06105", source: "customer", confirmed: false },
-    ] },
+    ], documents: { read: 0, status: "offered", offer: true } },
     bot: "Got it, I've put that in your quote on the right so you can check it. Do you have any auto documents handy, like a declaration page or driver's license?",
   },
   { user: "Yes, here's a photo of it.", wait: 1400 },
@@ -33,6 +33,7 @@ export const PREVIEW_SCRIPT = [
     ui: {
       section: "vehicles",
       progress: { done: 11, total: 24 },
+      documents: { read: 1, status: "extracted", offer: false },
       fields: [
         { key: "vehicle[0].year", label: "Year", value: "2021", source: "extracted" },
         { key: "vehicle[0].make", label: "Make", value: "Ford", source: "extracted" },

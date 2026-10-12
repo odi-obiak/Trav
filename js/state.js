@@ -23,6 +23,7 @@ export function createStore() {
     catalog: DEFAULT_CATALOG, // steps and wording, replaced by aisa_ui.panel from the flow (rules.panel)
     focus: null, // { section, key, seq }: where the flow wants the panel; seq changes with every new request
     choices: null, // { path, label, options } for the question AISA is asking now, shown as buttons; null when none
+    documents: null, // { read, status, offer } from the flow: documents read so far, last upload status, AISA offering now
   };
   let focusSeq = 0;
   const listeners = new Set();
@@ -78,6 +79,9 @@ export function createStore() {
         notice: typeof ui.notice === "string" ? ui.notice : state.notice,
         efficiency: ui.efficiency && typeof ui.efficiency === "object" ? ui.efficiency : state.efficiency,
         choices: "choices" in ui ? readChoices(ui.choices) : state.choices,
+        documents: ui.documents && typeof ui.documents === "object"
+          ? { read: Number(ui.documents.read) || 0, status: typeof ui.documents.status === "string" ? ui.documents.status : null, offer: ui.documents.offer === true }
+          : state.documents,
       };
       emit();
     },

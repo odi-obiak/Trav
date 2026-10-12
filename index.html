@@ -80,12 +80,17 @@
       </div>
       <div class="call-line">
         <button class="btn-call" data-action="switch-voice" type="button"><span class="call-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2z"/></svg></span>Switch to a call</button>
-        <button class="link-btn" data-action="upload" type="button">Share a document</button>
         <button class="link-btn" data-action="person" type="button">Talk to a person</button>
       </div>
       <form class="composer-row" data-composer-form>
         <label class="visually-hidden" for="composer-input">Your answer</label>
-        <button class="attach-btn" data-action="attach" type="button" aria-label="Share a document (photo or PDF)" title="Share a document"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5v10a4.5 4.5 0 0 1-9 0V5a3 3 0 0 1 6 0v10.5a1.5 1.5 0 0 1-3 0V6.5H9v9a3 3 0 0 0 6 0V5a4.5 4.5 0 0 0-9 0v11.5a6 6 0 0 0 12 0v-10h-1.5z"/></svg></button>
+        <button class="attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF)">
+          <svg class="attach-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11 8 15.01z"/></svg>
+          <svg class="attach-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span class="attach-spin" aria-hidden="true"></span>
+          <span class="attach-label" data-attach-label>Upload document</span>
+          <span class="attach-count" data-attach-count hidden></span>
+        </button>
         <textarea id="composer-input" data-composer-input rows="2" placeholder="Type your answer, or tell me anything else about your quote…"></textarea>
         <button class="btn btn-primary" type="submit">Ask AISA</button>
       </form>
