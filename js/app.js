@@ -64,9 +64,46 @@ const chat = createChat({
   onTyping: (on) => transcript.typing(on),
 });
 
+// ---- Session timer (demo only, 2026-10-12): in the demo bar, from the first message until the handover to an advisor,
+// across chat and calls, so a full quote can be measured. Shows the customer's turns (anything they typed, said or
+// tapped), time on calls, and when the quote was ready. Stops at the handover; a page reload starts it again.
+const session = { started: 0, stopped: 0, callMs: 0, callFrom: 0, readyAt: 0, timer: null };
+const sinceStart = (t) => formatClock(Math.floor(((t || Date.now()) - session.started) / 1000));
+function renderSessionTimer() {
+  if (!session.started) return;
+  const now = session.stopped || Date.now();
+  $("[data-session-clock]").textContent = sinceStart(now);
+  const turns = document.querySelectorAll("[data-messages] .msg-user").length;
+  const callMs = session.callMs + (session.callFrom ? now - session.callFrom : 0);
+  const bits = [`${turns} customer turn${turns === 1 ? "" : "s"}`];
+  if (callMs >= 1000) bits.push(`${formatClock(Math.floor(callMs / 1000))} on a call`);
+  if (session.readyAt) bits.push(`quote ready at ${sinceStart(session.readyAt)}`);
+  if (session.stopped) bits.push(`handover at ${sinceStart(session.stopped)}`);
+  $("[data-session-detail]").textContent = "· " + bits.join(" · ");
+}
+function startSessionTimer() {
+  if (session.started) return;
+  session.started = Date.now();
+  $("[data-session-timer]").hidden = false;
+  renderSessionTimer();
+  session.timer = setInterval(renderSessionTimer, 1000);
+}
+function followSessionTimer(state) {
+  if (!session.started || session.stopped) return;
+  if (!session.readyAt && (state.status === "quote_ready" || state.status === "rating")) session.readyAt = Date.now();
+  if (state.status === "advisor_requested") {
+    if (session.callFrom) { session.callMs += Date.now() - session.callFrom; session.callFrom = 0; }
+    session.stopped = Date.now();
+    clearInterval(session.timer);
+    renderSessionTimer();
+    console.info(`[session] handover at ${sinceStart(session.stopped)}: ${$("[data-session-detail]").textContent.replace(/^· /, "")}`);
+  }
+}
+
 // ---- Call clock (wireframe: "On a call · 00:38")
 let clockTimer = null;
 function startClock() {
+  if (session.started && !session.stopped && !session.callFrom) session.callFrom = Date.now();
   const started = Date.now();
   const label = $("[data-call-clock]");
   clearInterval(clockTimer);
@@ -75,6 +112,7 @@ function startClock() {
 }
 function stopClock() {
   clearInterval(clockTimer);
+  if (session.callFrom) { session.callMs += Date.now() - session.callFrom; session.callFrom = 0; }
 }
 
 // ---- On-screen awareness: what the customer is looking at, sent to whichever channel is live (see screen.js).
@@ -144,6 +182,7 @@ const voice = createVoice({
 // ---- Channel actions
 function enterConversation() {
   document.body.classList.add("in-conversation");
+  startSessionTimer();
 }
 
 async function startChat(intent) {
@@ -479,6 +518,7 @@ input.addEventListener("keydown", (e) => {
 let lastNotice = null;
 let lastChoices = null;
 store.subscribe((state) => {
+  followSessionTimer(state);
   // A new screen in the panel: forget which one was showing until it announces itself.
   if (state.xappUrl !== xappKindUrl) {
     xappKind = null;

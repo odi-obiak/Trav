@@ -32,6 +32,12 @@
 <div class="demo-bar" role="note">
   <svg aria-hidden="true"><use href="#info-circle-1-18"></use></svg>
   <span><strong>Demo environment.</strong> Not a live Travelers site. Quote details shown are sample data.</span>
+  <!-- Demo only (2026-10-12): how long the session has run, to measure a full quote until the handover. -->
+  <span class="session-timer" data-session-timer hidden aria-live="off">
+    <span class="session-timer__sep" aria-hidden="true">·</span>
+    Session <b data-session-clock>00:00</b>
+    <span data-session-detail></span>
+  </span>
 </div>
 
 <!-- TDS Global Header -->
@@ -59,7 +65,7 @@
     <section class="offer" data-offer aria-labelledby="offer-title">
       <span class="tds-tag tds-tag--static tds-tag--mint offer-tag">Auto insurance quote</span>
       <h1 id="offer-title" class="tds-h1">Get your auto quote by talking it through</h1>
-      <p class="tds-large lede">AISA, our AI assistant, walks you through it. Share your current Auto docs to get your quote faster.</p>
+      <p class="tds-large lede">AISA, our AI assistant, walks you through it. Share your current auto docs to get your quote faster.</p>
 
       <h2 class="tds-h4 choose-title">How would you like to start?</h2>
       <ul class="start-options" role="list">

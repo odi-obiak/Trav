@@ -49,6 +49,9 @@ svg { flex: none; }
 }
 .demo-bar svg { width: 14px; height: 14px; color: var(--blue); fill: currentColor; }
 .demo-bar strong { color: var(--ink); }
+.session-timer { color: var(--ink); font-variant-numeric: tabular-nums; }
+.session-timer b { font-weight: 700; }
+.session-timer__sep { color: var(--muted); margin: 0 2px; }
 
 /* ---------- Header (TDS global header) ---------- */
 .site-header { flex: none; }
