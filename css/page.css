@@ -1,6 +1,6 @@
 /* AISA Auto Quote page, on the Travelers Design System (TDS 8.8.1, css/tds.min.css).
    TDS supplies type, buttons, cards, tags, alerts, fields and the global header. This file only adds the page layout
-   and the parts TDS has no component for (call card, quote panel rows, upload button states). Every color is a TDS
+   and the parts TDS has no component for (the input bar, quote panel rows, upload button states). Every color is a TDS
    token value from @trv-tds/core dist/tokens/tokens.json; the token name is in the comment.
    Layout follows Jill Hanks' AISA wireframe: conversation on the left, "Your quote" review panel on the right. */
 :root {
@@ -113,25 +113,11 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
   background: var(--navy-l5); border: 1px solid var(--navy-l4); border-radius: 6px;
   box-shadow: 0 0.0625rem 0.125rem rgba(51, 93, 121, 0.07), 0 0.125rem 0.25rem rgba(51, 93, 121, 0.07); /* tds-shadow-2 */
 }
-.msg-who { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 700; color: var(--ink); }
-/* The transcript writes "AI" in the avatar; the TDS sparkle icon replaces it. */
-.msg-avatar {
-  display: inline-block; width: 24px; height: 24px; border-radius: 50%; background: var(--navy);
-  font-size: 0; color: transparent; position: relative;
-}
-.msg-avatar::before, .call-avatar svg { color: #fff; }
-.msg-avatar::before {
-  content: ""; position: absolute; inset: 5px; background: #fff;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5.35 2.28L3.9 1.8 3.42.35c-.16-.47-.93-.47-1.09 0L1.85 1.8.4 2.28c-.23.08-.39.3-.39.54s.16.47.39.54l1.45.48.48 1.45a.584.584 0 001.1 0l.48-1.45 1.45-.48c.23-.08.39-.3.39-.54s-.16-.47-.39-.54zM9.75 18c-.21 0-.39-.12-.46-.32l-2.12-5.35-5.350-2.12c-.19-.08-.32-.26-.32-.46s.12-.39.32-.46l5.35-2.12 2.12-5.35c.15-.38.78-.38.93 0l2.120 5.35 5.35 2.12c.19.08.32.26.32.46s-.12.39-.32.46l-5.35 2.12-2.12 5.35c-.08.19-.26.32-.46.32z'/%3E%3C/svg%3E") center / contain no-repeat;
-          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5.35 2.28L3.9 1.8 3.42.35c-.16-.47-.93-.47-1.09 0L1.85 1.8.4 2.28c-.23.08-.39.3-.39.54s.16.47.39.54l1.45.48.48 1.45a.584.584 0 001.1 0l.48-1.45 1.45-.48c.23-.08.39-.3.39-.54s-.16-.47-.39-.54zM9.75 18c-.21 0-.39-.12-.46-.32l-2.12-5.35-5.350-2.12c-.19-.08-.32-.26-.32-.46s.12-.39.32-.46l5.35-2.12 2.12-5.35c.15-.38.78-.38.93 0l2.120 5.35 5.35 2.12c.19.08.32.26.32.46s-.12.39-.32.46l-5.35 2.12-2.12 5.35c-.08.19-.26.32-.46.32z'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-.msg-via {
-  font-weight: 600; font-size: 0.75rem; line-height: 1.3; color: var(--navy);
-  background: var(--navy-l5); border: 1px solid var(--navy-l4); border-radius: 999px; padding: 1px 8px;
-}
+/* No name, avatar or "spoken" tag on messages (2026-10-14, Sascha): only AISA and the customer are here; who said what is
+   clear from the layout. Screen readers get a hidden "AISA:" or "You:" (transcript.js). */
 .msg-text { margin: 0; font-size: 1rem; line-height: 1.6; white-space: pre-wrap; }
 /* TDS Chat Message (Figma 8.8.0): the plain variant fills its container, so cap it at a comfortable measure (~66 characters; average text is about half an em wide, `ch` is wider). */
-.msg-bot .msg-body { padding-left: 32px; max-width: calc(34em + 32px); }
+.msg-bot .msg-body { max-width: 34em; }
 .msg-body > * + * { margin-top: 8px; }
 .msg-list { margin: 0; padding-left: 22px; font-size: 1rem; line-height: 1.6; }
 .msg-body > .msg-heading:not(:first-child) { margin-top: 14px; }
@@ -145,7 +131,7 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .msg-image { display: block; max-width: min(260px, 100%); max-height: 260px; margin-top: 6px; border-radius: 4px; border: 1px solid var(--navy-l4); }
 
 /* Answer buttons under AISA's latest message (TDS secondary small buttons). */
-.choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; padding-left: 36px; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; padding-left: 4px; }
 .choice {
   font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.5; letter-spacing: 0.046875rem;
   cursor: pointer; background: #fff; color: var(--red); border: 1px solid var(--red); border-radius: 0.1875rem;
@@ -161,55 +147,85 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .choice-toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; box-shadow: none; }
 .choice-toggle[aria-pressed="true"]::before { content: "\2713  "; white-space: pre; }
 /* A grouped question (2026-10-11): one labelled row of buttons per part, one Done for all. */
-.choices-rows { display: grid; gap: 12px; align-self: stretch; margin-left: 36px; padding: 4px 0 4px 14px; border-left: 3px solid var(--navy-l4); }
+.choices-rows { display: grid; gap: 12px; align-self: stretch; margin-left: 4px; padding: 4px 0 4px 14px; border-left: 3px solid var(--navy-l4); }
 .choice-row { display: grid; gap: 6px; }
 .choice-row__label { font-size: 0.875rem; font-weight: 600; color: var(--ink); }
 .choice-row__options { display: flex; flex-wrap: wrap; gap: 8px; }
 .choice-row__done { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .choice-row__done .choices-hint { flex-basis: auto; }
 
-.typing { display: flex; gap: 4px; padding: 0 4px 8px 40px; }
+.typing { display: flex; gap: 4px; padding: 0 4px 8px 8px; }
 .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--navy-soft); animation: blink 1.2s infinite ease-in-out; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
 
-/* ---------- Composer ---------- */
+/* ---------- Composer: one bar for typing and talking (2026-10-14, Sascha's review) ----------
+   Upload, the message, the mic and send sit in one rounded bar, like a modern chat app. During a call the same bar
+   shows the call (bars, "Listening", clock) with mute and "back to typing"; typing still works on a call. */
 .composer { flex: none; padding: 12px 0 16px; border-top: 1px solid var(--line); background: #fff; }
-.composer-row { display: grid; gap: 10px; container-type: inline-size; }
-.composer-field { margin: 0; }
-.composer-field .tds-field__input { width: 100%; min-height: 56px; resize: none; font-family: inherit; }
-.composer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.composer-send { margin-left: auto; }
-.composer-note { margin: 8px 0 0; color: var(--muted); }
-body[data-channel="voice"] [data-action="switch-voice"] { display: none; }
-
-/* Upload button: one labelled way to share a document, in chat and on a call, with its own progress (app.js).
-   Styled like a TDS secondary small button, but kept custom: TDS hides a button's label while aria-busy. */
-.attach-btn {
-  position: relative; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; cursor: pointer;
-  font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.5; letter-spacing: 0.046875rem;
-  padding: 0.4375rem 0.875rem 0.375rem; background: #fff; color: var(--red);
-  border: 1px solid var(--red); border-radius: 0.1875rem; transition: color 0.25s, border-color 0.25s, box-shadow 0.25s;
+.composer-row { container-type: inline-size; }
+.composer-bar {
+  display: flex; align-items: flex-end; gap: 4px; padding: 6px; background: #fff;
+  border: 1px solid var(--line); border-radius: 24px; transition: border-color 0.15s, box-shadow 0.15s;
 }
-.attach-btn svg { width: 14px; height: 14px; fill: currentColor; }
-.attach-btn:hover { color: var(--red-dark); border-color: var(--red-dark); box-shadow: inset 0 0 0 1px var(--red-dark); }
-.attach-done, .attach-spin, .attach-short { display: none; }
-.label-short { display: none; }
-.attach-btn[aria-busy="true"] { cursor: progress; color: var(--muted); border-color: var(--line); background: var(--bg-soft); box-shadow: none; }
+.composer-bar:focus-within { border-color: var(--navy-soft); box-shadow: 0 0 0 3px var(--navy-l5); }
+.composer-input {
+  flex: 1; min-width: 0; align-self: center; margin: 0; padding: 7px 6px; border: 0; outline: 0; resize: none; background: none;
+  font: inherit; font-size: 1rem; line-height: 1.5; color: var(--ink); max-height: 9rem; overflow-y: auto;
+}
+.composer-input::placeholder { color: var(--muted); }
+.bar-btn {
+  position: relative; flex: none; display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; transition: background-color 0.15s, color 0.15s;
+}
+.bar-btn svg { width: 22px; height: 22px; fill: currentColor; }
+.bar-btn:hover { background: var(--navy-l5); color: var(--navy); }
+.bar-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.bar-send { background: var(--red); color: #fff; }
+.bar-send svg { width: 20px; height: 20px; }
+.bar-send:hover { background: var(--red-dark); color: #fff; }
+.composer-note { margin: 8px 0 0; color: var(--muted); text-align: center; }
+
+/* Which buttons show depends on the channel. */
+.bar-mute, .bar-type, .call-status { display: none; }
+body[data-channel="voice"] .bar-mic { display: none; }
+body[data-channel="voice"] .bar-mute, body[data-channel="voice"] .bar-type { display: inline-grid; }
+body[data-channel="voice"] .call-status { display: inline-flex; }
+body[data-channel="voice"] .composer-bar { border-color: var(--red); }
+.bar-mute[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.bar-mute[aria-pressed="true"]::after { content: ""; position: absolute; width: 2px; height: 26px; background: currentColor; transform: rotate(45deg); border-radius: 1px; }
+
+/* The call, inside the bar. */
+.call-status { flex: none; align-self: center; align-items: center; gap: 8px; padding: 0 6px 0 8px; font-size: 0.875rem; color: var(--navy); white-space: nowrap; }
+.call-clock { font-variant-numeric: tabular-nums; color: var(--muted); }
+.call-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.call-bars i { width: 3px; background: var(--red); border-radius: 1px; animation: bars 1s infinite ease-in-out; }
+.call-bars i:nth-child(1) { height: 6px; }
+.call-bars i:nth-child(2) { height: 13px; animation-delay: 0.15s; }
+.call-bars i:nth-child(3) { height: 9px; animation-delay: 0.3s; }
+@keyframes bars { 50% { transform: scaleY(0.5); } }
+body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: none; }
+body.voice-connecting .call-status::before {
+  content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--red);
+  animation: attach-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .call-bars i, body.voice-connecting .call-status::before { animation: none; } }
+
+/* Upload: a paperclip in the bar, with its own progress (app.js) and a small green count of documents read. */
+.attach-spin { display: none; }
+.attach-btn[aria-busy="true"] { cursor: progress; }
 .attach-btn[aria-busy="true"] .attach-icon { display: none; }
 .attach-btn[aria-busy="true"] .attach-spin {
-  display: block; width: 14px; height: 14px; border-radius: 50%;
+  display: block; width: 18px; height: 18px; border-radius: 50%;
   border: 2px solid var(--line); border-top-color: var(--blue); animation: attach-spin 0.8s linear infinite;
 }
-.attach-btn[data-state="done"] .attach-icon { display: none; }
-.attach-btn[data-state="done"] .attach-done { display: block; }
 .attach-count {
-  display: inline-flex; align-items: center; gap: 3px; padding: 0 8px; border-radius: 999px;
-  font-size: 0.75rem; font-weight: 600; letter-spacing: 0; color: var(--green); background: var(--green-soft);
+  position: absolute; top: -3px; right: -5px; display: inline-flex; align-items: center; gap: 1px; padding: 0 5px;
+  border-radius: 999px; border: 1.5px solid #fff; font-size: 0.6875rem; font-weight: 600; line-height: 1.45;
+  color: var(--green); background: var(--green-soft);
 }
 .attach-count::before { content: "\2713"; }
-.attach-count::after { content: " read"; }
 .attach-pulse { animation: attach-pulse 1.3s ease-out 3; }
 @keyframes attach-pulse {
   0% { box-shadow: 0 0 0 0 rgba(224, 23, 25, 0.4); }
@@ -220,52 +236,18 @@ body[data-channel="voice"] [data-action="switch-voice"] { display: none; }
   .attach-pulse { animation: none; box-shadow: 0 0 0 3px rgba(224, 23, 25, 0.3); }
   .attach-btn[aria-busy="true"] .attach-spin { animation: none; border-top-color: var(--line); }
 }
-/* A narrow chat column: short labels so "Ask AISA" keeps its room. The upload button always keeps its upload icon and
-   the word "Upload" (an icon alone, or a tick in its place after a read, looked like "done"); documents read so far are
-   a small green "✓ 1" badge on its corner. Screen readers get the full aria-label from app.js. */
-@container (max-width: 520px) {
-  .composer-send { min-width: 0; padding-left: 1.25rem; padding-right: 1.25rem; }
-  .attach-btn { padding-left: 0.625rem; padding-right: 0.625rem; }
-  .attach-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .attach-btn:not([aria-busy="true"]) .attach-short { display: inline; }
-  .btn-call .label-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .btn-call .label-short { display: inline; }
-  .attach-btn[data-state="done"] .attach-icon { display: block; }
-  .attach-btn[data-state="done"] .attach-done { display: none; }
-  .attach-count { position: absolute; top: -9px; right: -9px; padding: 0 5px; font-size: 0.6875rem; line-height: 1.45; border: 1.5px solid #fff; }
-  .attach-count::after { content: none; }
+/* A narrow bar during a call: keep the clock, drop the word "Listening". */
+@container (max-width: 420px) {
+  .call-status [data-call-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .call-status { padding-left: 4px; }
 }
 
-/* ---------- Voice call card ---------- */
-.call-card {
-  display: none; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap;
-  margin: 0 0 12px; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--red);
-  border-radius: 6px; box-shadow: var(--shadow-card);
+/* Drop a document anywhere on the conversation (app.js): the drop opens the upload screen with the file. */
+.conversation.drop-target::after {
+  content: "Drop to share with AISA"; position: absolute; inset: 8px 0; z-index: 5; display: grid; place-items: center;
+  border: 2px dashed var(--navy-soft); border-radius: 8px; background: rgba(242, 245, 247, 0.92);
+  font-size: 1.125rem; font-weight: 600; color: var(--navy); pointer-events: none;
 }
-body[data-channel="voice"] .call-card { display: flex; }
-.call-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.call-avatar { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--navy); flex: none; }
-.call-avatar svg { width: 22px; height: 22px; fill: currentColor; }
-body.voice-connecting .call-avatar::after {
-  content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--navy-soft);
-  animation: ring 1.4s infinite ease-out;
-}
-@keyframes ring { from { transform: scale(0.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
-.call-meta { display: grid; gap: 2px; min-width: 0; }
-.call-meta b { font-size: 1.0625rem; color: var(--navy); }
-.call-sub { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; color: var(--muted); }
-.call-clock { font-variant-numeric: tabular-nums; }
-.call-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
-.call-bars i { width: 3px; background: var(--red); border-radius: 1px; animation: bars 1s infinite ease-in-out; }
-.call-bars i:nth-child(1) { height: 5px; }
-.call-bars i:nth-child(2) { height: 11px; animation-delay: 0.15s; }
-.call-bars i:nth-child(3) { height: 8px; animation-delay: 0.3s; }
-@keyframes bars { 50% { transform: scaleY(0.5); } }
-body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: none; }
-.call-controls { display: flex; gap: 8px; }
-.call-btn[aria-pressed="true"] { --tds-btn-bg-color: var(--navy); --tds-btn-text-color: #fff; --tds-btn-border-color: var(--navy); --tds-btn-hover-bg-color: var(--navy-soft); --tds-btn-hover-text-color: #fff; --tds-btn-hover-border-color: var(--navy-soft); }
-.call-end svg { transform: rotate(135deg); }
-@media (prefers-reduced-motion: reduce) { .call-bars i, body.voice-connecting .call-avatar::after { animation: none; } }
 
 /* ---------- Quote panel ---------- */
 .quote-panel {
@@ -317,7 +299,10 @@ body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: n
 .step-list .is-current .step-num::after { content: none; }
 /* The stepper shows progress, so the bar is kept only for screen readers (role="progressbar"). */
 .progress { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); margin: 0; }
-.step-label { padding: 8px 20px 12px; border-bottom: 1px solid var(--line); }
+/* The step's name is already the card's heading, so the label is kept only for screen readers and the phone's
+   "Your quote" bar, which copies it (2026-10-14, Sascha: say it once). */
+.step-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; }
+.step-list { padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 0; }
 
 .panel-body { padding: 16px 20px; display: grid; gap: 12px; }
 .form-card { background: #fff; }
@@ -339,6 +324,9 @@ body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: n
 .src-decoded { background: var(--green-soft); color: var(--green); border-color: rgb(178, 217, 199); } /* VIN lookup (2026-10-12) */
 .src-check { background: var(--red-soft); color: var(--red-dark); border-color: rgb(245, 180, 180); }
 .src-customer, .src-derived { background: var(--bg-soft); color: var(--muted); border-color: var(--line); }
+/* Where an answer came from, as a quiet note (2026-10-14, Sascha): the customer's own answers carry none, filled-in ones
+   say "From our records" or "From your document" so the "filled for you" story still shows. */
+.src-note { flex-basis: 100%; font-size: 0.75rem; font-weight: 400; color: var(--muted); }
 
 /* "Filled for you" summary on Review. */
 .eff-card { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; background: var(--green-soft); border: 1px solid rgb(178, 217, 199); border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; }
@@ -356,8 +344,12 @@ body.voice-connecting .call-bars, body.voice-connecting .call-clock { display: n
 
 .panel-actions { display: grid; justify-items: start; gap: 8px; padding: 4px 0 8px; }
 .panel-actions .tds-button--primary { width: 100%; }
-.step-nav { display: flex; gap: 8px; justify-content: space-between; width: 100%; }
-.step-nav .link-btn:only-child { margin-left: auto; }
+/* Back stays on the left and Next on the right on every step (2026-10-14, Sascha: on the last step "Previous" used to
+   move into Next's place). panel.js always fills both slots. */
+.step-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.step-nav > :last-child { justify-self: end; }
+.step-nav .link-btn { display: inline-flex; align-items: center; gap: 4px; }
+.step-nav svg { width: 14px; height: 14px; }
 body:not(.in-conversation) .panel-actions { display: none; }
 
 /* Cards at the top of the panel: xApp screens and the advisor handoff. */
@@ -391,14 +383,18 @@ body:not(.in-conversation) .panel-actions { display: none; }
 /* Phones only (shown in the narrow-screen block): the bar that opens the quote drawer, and the scrim behind it. */
 .quote-peek, .drawer-scrim { display: none; }
 
-/* Collapse tab ("Hide quote"), on the panel's left edge. */
-.panel-tab {
-  position: absolute; left: -27px; top: 50%; transform: translateY(-50%); z-index: 2;
-  width: 26px; padding: 14px 0; border: 1px solid var(--line); border-right: 0; border-radius: 6px 0 0 6px;
-  background: #fff; color: var(--navy); cursor: pointer; font: inherit; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+/* Show tab: only while the panel is collapsed, a chevron on the right edge reopens it. The chevron in the panel head
+   collapses it (2026-10-14, Sascha: the rotated "Hide quote" text read the wrong way). */
+.panel-tab { display: none; }
+body.panel-hidden .panel-tab {
+  position: absolute; right: 0; top: 24px; z-index: 2; display: grid; place-items: center; width: 32px; height: 44px; padding: 0;
+  border: 1px solid var(--line); border-right: 0; border-radius: 6px 0 0 6px; background: #fff; color: var(--navy); cursor: pointer;
+  box-shadow: var(--shadow-card);
 }
-.panel-tab span { writing-mode: vertical-rl; }
+.panel-tab svg { width: 18px; height: 18px; }
 .panel-tab:hover { background: var(--navy-l5); }
+.panel-collapse svg { width: 18px; height: 18px; }
+.panel-collapse .icon-phone { display: none; }
 body.panel-hidden .quote-panel { width: 0; flex-basis: 0; border: 0; box-shadow: none; }
 body.panel-hidden .panel-inner { display: none; }
 
@@ -444,6 +440,8 @@ body.panel-hidden .panel-inner { display: none; }
   /* Drawer header look (.tds-drawer__header): light background, rule underneath. */
   .panel-head { background: #fbfbfb; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 8px; }
   .panel-head .icon-btn { width: 36px; height: 36px; top: 12px; }
+  .panel-collapse .icon-desktop { display: none; }
+  .panel-collapse .icon-phone { display: block; width: 16px; height: 16px; }
   body.quote-open { overflow: hidden; }
   body.in-conversation .drawer-scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 1039; background: rgba(39, 42, 45, 0.5); }
 

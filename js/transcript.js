@@ -223,15 +223,13 @@ export function createTranscript(root, { onChoice }) {
       const ack = from === "bot" && !!text && !image && (channel === "voice" || !!mid) && Date.now() < ackUntil;
       if (ack) ackUntil = 0;
       if (text) history.push({ from: from === "user" ? "customer" : "aisa", text: String(text).slice(0, 600), via: channel });
-      const who = from === "user" ? "You" : "AISA";
-      const badge = from === "bot"
-        ? el("span", { class: "msg-avatar", "aria-hidden": "true" }, "AI")
-        : null;
-      const tag = via === "voice" ? el("span", { class: "msg-via" }, "spoken") : null;
+      // No visible name, avatar or "spoken" tag (2026-10-14, Sascha): only AISA and the customer are in this chat, and
+      // the layout shows who is who. Screen readers still hear who said it.
+      const who = from === "user" ? "You:" : "AISA:";
       const body = el("div", { class: "msg-body tds-chat__message-content" }, ...(text ? (from === "bot" ? formatText(text) : [el("p", { class: "msg-text" }, text)]) : []));
       // TDS chat message: plain for AISA (long replies), bubble for the customer (TDS AI & Chat guidance).
       const bubble = el("div", { class: `msg msg-${from} tds-chat__message${from === "user" ? " tds-chat__message--bubble" : ""}` },
-        el("div", { class: "msg-who tds-chat__message-header" }, badge, el("span", { class: "tds-chat__message-name" }, who), tag),
+        el("span", { class: "visually-hidden" }, who),
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);

@@ -10,6 +10,7 @@ import { randomId, formatClock, debug } from "./util.js";
 
 const params = new URLSearchParams(location.search);
 const isPreview = params.get("preview") === "1";
+const isDebug = params.get("debug") === "1";
 
 // Contact Profile keyed on quoteId (via userId = "aisa-<quoteId>") is the primary cross-session store. Both chat and
 // voice share the same userId so they share the same profile. Nothing is stored on the device.
@@ -38,6 +39,13 @@ function say(message) {
   toast.hidden = false;
   clearTimeout(say.t);
   say.t = setTimeout(() => (toast.hidden = true), 6000);
+}
+
+// Technical status lines (a call starting or ending) only with ?debug=1 (2026-10-14, Sascha: the customer simply
+// switches between typing and talking; these lines were over-confirmation). Failures still reach the customer, as a toast.
+function debugNote(text) {
+  debug("note", text);
+  if (isDebug) transcript.note(text);
 }
 
 function setChip(name, status) {
@@ -143,7 +151,7 @@ const voice = createVoice({
   onStatus: (s) => {
     setChip("voice", s);
     document.body.classList.toggle("voice-connecting", s === "connecting");
-    $("[data-call-label]").textContent = s === "connecting" ? "Calling AISA…" : "On a call";
+    $("[data-call-label]").textContent = s === "connecting" ? "Connecting…" : "Listening";
     if (s === "live") {
       callWasLive = true;
       startClock();
@@ -152,9 +160,7 @@ const voice = createVoice({
       pendingSwitchFromChat = false;
     }
     if (s !== "live" && s !== "connecting") {
-      const mute = $('[data-action="mute"]');
-      mute.setAttribute("aria-pressed", "false");
-      mute.querySelector("[data-mute-label]").textContent = "Mute";
+      setMuteButton(false);
     }
   },
   // A browser call ending never ends the journey: fall back to chat with everything retained.
@@ -166,12 +172,12 @@ const voice = createVoice({
     // A call that never connected (microphone blocked, network) is not a return from voice: nothing changed on the
     // call, so don't tell chat (AISA would repeat itself). Say so plainly and stay in chat.
     if (!callWasLive) {
-      transcript.note("The call couldn't connect. Everything is saved, so you can keep going here in chat.");
+      say("The call couldn't connect. Everything is saved, so you can keep going here.");
       if (!chat.started) startChat();
       return;
     }
     callWasLive = false;
-    transcript.note("Call ended. You're back in chat, and everything you told AISA is kept.");
+    debugNote("Call ended. You're back in chat, and everything you told AISA is kept.");
     // Step 7: the call's state and its last turns are in the Contact Profile; the flow loads them. This is only the
     // signal that the customer is back, so AISA speaks first.
     const note = { aisa_event: { type: "returned_from_voice", quoteId } };
@@ -192,7 +198,8 @@ async function startChat(intent) {
   try {
     await chat.start(intent ? { ...entry, intent } : entry);
   } catch (err) {
-    transcript.note(`Chat couldn't connect (${err.message}).`);
+    debug("chat failed", err);
+    say("AISA couldn't connect. Please try again in a moment.");
   }
 }
 
@@ -208,7 +215,7 @@ async function startVoice(fromChat) {
   try {
     pendingSwitchFromChat = Boolean(fromChat);
     store.set({ channel: "voice" });
-    transcript.note(fromChat ? "Switching to voice. Allow the microphone if your browser asks." : "Starting a voice conversation in your browser. Allow the microphone if asked.");
+    debugNote(fromChat ? "Switching to voice." : "Starting a voice conversation in the browser.");
     // Step 7: the chat's state and last turns are in the Contact Profile; the entry only says where the call came from.
     await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null });
   } catch (err) {
@@ -219,7 +226,7 @@ async function startVoice(fromChat) {
     debug("voice failed", err);
     // Plain words for the customer; the SDK detail goes to the debug log.
     const reason = /microphone|permission|NotAllowed/i.test(err.message) ? "the microphone isn't available" : "the call couldn't connect";
-    transcript.note(`Voice isn't available right now (${reason}). Everything is saved, so you can keep going here in chat.`);
+    say(`Talking isn't available right now (${reason}). Everything is saved, so you can keep typing.`);
     if (!chat.started) startChat();
   }
 }
@@ -433,6 +440,7 @@ const SCREEN_CARD = { dec_upload: "upload_screen", rate_page: "rate_page" };
 const UPLOAD_STATUSES = ["open", "preparing", "uploading", "uploaded", "failed", "declined"];
 const UPLOAD_ERRORS = ["expired", "too_big", "wrong_type", "cant_open", "timeout", "network", "rejected", "unavailable"];
 let xappKind = null; // which screen the panel frame is showing, as the screen itself announced
+let screenWindow = null; // that screen's own frame, for handing it a dropped file
 let xappKindUrl = null;
 const xappFrame = $("[data-xapp]");
 function fromPanelFrame(source) {
@@ -454,6 +462,8 @@ window.addEventListener("message", (event) => {
   if (m.aisa === "screen" && SCREEN_CARD[m.screen]) {
     xappKind = m.screen;
     xappKindUrl = store.get().xappUrl;
+    screenWindow = event.source;
+    if (m.screen === "dec_upload") offerDroppedFile(event.source);
     const v = screen.view;
     screen.report({ cards: [SCREEN_CARD[m.screen], ...v.cards.filter((c) => c !== "shared_screen" && c !== SCREEN_CARD[m.screen])], ...(m.screen === "dec_upload" ? { upload: { status: "open", kind: null, error: null } } : { upload: null }) });
     return;
@@ -476,6 +486,57 @@ window.addEventListener("message", (event) => {
   }
 });
 
+// ---- Drop a document on the conversation (2026-10-14, Sascha: "drag documents in at any time"). The page never uploads
+// the file itself: the drop opens the upload screen (the same request as the upload button), and the file is offered
+// to that screen as soon as it announces itself ({ aisa: "file", file } to the screen's frame). A screen that doesn't
+// take files that way still opens, and the customer is told to drop or choose the file there.
+const conversationEl = $("[data-conversation]");
+const DROP_TYPES = /^(image\/(jpeg|png|heic|heif|webp)|application\/pdf)$/;
+let pendingDrop = null; // { file, at }
+let dropHint = null;
+let dragDepth = 0;
+const draggingFiles = (e) => [...((e.dataTransfer && e.dataTransfer.types) || [])].includes("Files");
+function offerDroppedFile(target) {
+  if (!pendingDrop || Date.now() - pendingDrop.at > 60000) return (pendingDrop = null);
+  try { target.postMessage({ aisa: "file", file: pendingDrop.file }, "*"); } catch (err) { debug("drop handoff failed", err); }
+  pendingDrop = null;
+  // If the screen doesn't start uploading, it doesn't take dropped files yet: say what to do instead.
+  clearTimeout(dropHint);
+  dropHint = setTimeout(() => {
+    if (attachPhase !== "uploading" && attachPhase !== "reading") say("Drop your file on the upload screen, or choose it there.");
+  }, 3000);
+}
+conversationEl.addEventListener("dragenter", (e) => {
+  if (!draggingFiles(e) || !document.body.classList.contains("in-conversation")) return;
+  e.preventDefault();
+  dragDepth += 1;
+  conversationEl.classList.add("drop-target");
+});
+conversationEl.addEventListener("dragover", (e) => {
+  if (!draggingFiles(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "copy";
+});
+conversationEl.addEventListener("dragleave", () => {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) conversationEl.classList.remove("drop-target");
+});
+conversationEl.addEventListener("drop", (e) => {
+  if (!draggingFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  conversationEl.classList.remove("drop-target");
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file) return;
+  if (!DROP_TYPES.test(file.type)) return say("That file can't be read. Share a photo (JPEG or PNG) or a PDF.");
+  pendingDrop = { file, at: Date.now() };
+  if (screenWindow && xappKind === "dec_upload" && store.get().xappUrl) return offerDroppedFile(screenWindow);
+  requestUpload();
+});
+// A file dropped anywhere else must not make the browser leave the page to open it.
+window.addEventListener("dragover", (e) => { if (draggingFiles(e)) e.preventDefault(); });
+window.addEventListener("drop", (e) => { if (draggingFiles(e)) e.preventDefault(); });
+
 // ---- Wiring
 const on = (action, fn) => document.querySelectorAll(`[data-action="${action}"]`).forEach((b) => b.addEventListener("click", fn));
 on("start-chat", () => startChat());
@@ -485,12 +546,13 @@ on("upload", requestUpload);
 on("attach", requestUpload);
 on("switch-voice", () => startVoice(true));
 on("hang-up", () => (isPreview ? voice_previewEnd() : voice.end().catch((err) => say(err.message))));
-on("mute", async (e) => {
-  const btn = e.currentTarget;
-  const muted = await voice.toggleMute();
+function setMuteButton(muted) {
+  const btn = $('[data-action="mute"]');
   btn.setAttribute("aria-pressed", String(muted));
-  btn.querySelector("[data-mute-label]").textContent = muted ? "Unmute" : "Mute";
-});
+  btn.setAttribute("aria-label", muted ? "Unmute" : "Mute");
+  btn.title = muted ? "Unmute" : "Mute";
+}
+on("mute", async () => setMuteButton(await voice.toggleMute()));
 on("person", talkToPerson);
 on("toggle-panel", () => {
   if (phone.matches) return setDrawer(false); // on phones the panel's close button closes the drawer
@@ -498,7 +560,8 @@ on("toggle-panel", () => {
   screen.report({ panelOpen: !hidden });
   const tab = $(".panel-tab");
   tab.setAttribute("aria-expanded", String(!hidden));
-  $("[data-tab-label]").textContent = hidden ? "Show quote" : "Hide quote";
+  // Focus follows the control that can undo it: the show tab while collapsed, the collapse chevron while open.
+  (hidden ? tab : panelEl.querySelector(".panel-collapse")).focus({ preventScroll: true });
 });
 
 const input = $("[data-composer-input]");
@@ -508,6 +571,13 @@ $("[data-composer-form]").addEventListener("submit", (e) => {
   input.value = "";
   sendText(text);
 });
+// The bar starts one line high and grows with the message, up to about six lines (then it scrolls).
+function fitInput() {
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+}
+input.addEventListener("input", fitInput);
+$("[data-composer-form]").addEventListener("submit", () => requestAnimationFrame(fitInput));
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -528,6 +598,8 @@ store.subscribe((state) => {
   followAttach(state);
   followDrawer(state);
   document.body.dataset.channel = state.channel;
+  // On a call the bar already shows the call, so the box only invites typing (a long hint wraps on a phone).
+  input.placeholder = state.channel === "voice" ? "Or type here" : "Type or talk to AISA";
   $("[data-preview]").hidden = !state.preview;
   if (state.notice && state.notice !== lastNotice) transcript.note(state.notice);
   // The question's options as buttons under AISA's latest message (chat and during a call). A tap is data only: the flow
@@ -550,12 +622,13 @@ store.subscribe((state) => {
 setChip("chat", CONFIG.webchatConfigUrl ? "ready" : "off");
 setChip("voice", CONFIG.voiceEndpointUrl ? "ready" : "off");
 $("[data-quote-id]").textContent = quoteId;
+$("[data-demo-bar]").hidden = !isDebug; // the demo notice and session timer are for us, not the customer or the recording
 
 // ---- Preview: plays a scripted conversation (placeholder data) so the layout can be reviewed without Cognigy.
 function voice_previewEnd() {
   stopClock();
   store.set({ channel: "chat" });
-  transcript.note("Call ended. You're back in chat, and everything you told AISA is kept.");
+  debugNote("Call ended. You're back in chat, and everything you told AISA is kept.");
 }
 
 if (isPreview) {
@@ -571,7 +644,7 @@ if (isPreview) {
         if (step.channel === "voice") startClock();
         else stopClock();
       }
-      if (step.note) transcript.note(step.note);
+      if (step.note) (step.channel ? debugNote : transcript.note)(step.note); // a channel switch note is technical, like the live ones
       if (step.bot) transcript.add({ from: "bot", text: step.bot, choices: step.choices || [], via: step.via || "chat" });
       if (step.user) transcript.add({ from: "user", text: step.user, via: step.via || "chat" });
       if (step.ui) store.applyUi(step.ui);

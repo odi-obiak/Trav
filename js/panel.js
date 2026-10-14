@@ -73,7 +73,10 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   const stepFor = (id) => steps().find((s) => s.id === id) || null;
   const isData = (step) => !step.kind;
 
-  // Short tag on screen, full wording as the tooltip and for screen readers.
+  // Where an answer came from (2026-10-14, Sascha: the customer doesn't need a "You" tag on their own answers). Their own
+  // answers and answers copied from them carry nothing; filled-in ones get a quiet "From our records" style note, and an
+  // unconfirmed one keeps its "confirm" tag, since the customer has to act on it.
+  const QUIET_SOURCES = new Set(["customer", "derived"]);
   function sourceTag(f) {
     const tag = state.catalog.sourceTags[f.source] || {};
     const short = tag.short;
@@ -82,7 +85,8 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       const full = `${long || "Not confirmed yet"}. Please confirm.`;
       return el("span", { class: "src-tag src-check", title: full, "aria-label": full }, `${short || "Check"} · confirm`);
     }
-    return short ? el("span", { class: `src-tag src-${f.source}`, title: long, "aria-label": long }, short) : null;
+    if (!f.source || QUIET_SOURCES.has(f.source)) return null;
+    return long || short ? el("span", { class: "src-note" }, long || short) : null;
   }
 
   // Answers that just arrived or changed stay highlighted for a few seconds, so the customer can check them.
@@ -252,7 +256,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     const step = stepFor(viewStep) || list[0];
     const index = list.indexOf(step);
 
-    stepLabel.textContent = `Step ${index + 1}/${list.length}: ${step.title}`;
+    stepLabel.textContent = step.title; // the stepper above already shows the number (2026-10-14, Sascha)
     bar.style.width = `${Math.round(((index + 1) / list.length) * 100)}%`;
     bar.parentElement.setAttribute("aria-valuenow", String(index + 1));
     bar.parentElement.setAttribute("aria-valuemax", String(list.length));
@@ -305,17 +309,26 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       fix.addEventListener("click", () => onCorrect({ step }));
       footer.append(fix);
     }
+    // Back on the left, Next on the right, always in the same place (an empty slot keeps the other one put).
     const nav = el("div", { class: "step-nav" });
+    const chevron = (id) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("aria-hidden", "true");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", `#${id}`);
+      svg.append(use);
+      return svg;
+    };
     if (index > 0) {
-      const back = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Previous step");
+      const back = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button", title: "Previous step" }, chevron("chevron-left-18"), "Back");
       back.addEventListener("click", () => go(-1));
       nav.append(back);
-    }
+    } else nav.append(el("span", { "aria-hidden": "true" }));
     if (index < list.length - 1) {
-      const fwd = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Next step");
+      const fwd = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button", title: "Next step" }, "Next", chevron("chevron-right-18"));
       fwd.addEventListener("click", () => go(1));
       nav.append(fwd);
-    }
+    } else nav.append(el("span", { "aria-hidden": "true" }));
     footer.append(nav);
     body.replaceChildren(built.node, footer);
     onView?.({ step: step.id, xapp: !!showXapp, advisor: showAdvisor }, byCustomer);
