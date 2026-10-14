@@ -32,9 +32,20 @@ function inline(line) {
   }
   return out;
 }
-function formatText(text) {
+// When the question's parts show as labelled rows of buttons, a bulleted list of the same questions above them is said twice
+// (2026-10-14, Odiche: "Is that also your mailing address?" as a bullet and again as a row). The flow tells AISA to say one
+// summary line; if it lists the questions anyway, the question bullets are left out here and a trailing colon becomes a
+// period. Only "- ...?" lines go: other bullets (a confirmation's details) are kept.
+function dropQuestionList(text) {
+  const lines = String(text).split("\n");
+  const kept = lines.filter((l) => !(BULLET.test(l) && /\?\s*(\(.*\))?\s*$/.test(l.trim())));
+  if (kept.length === lines.length) return text;
+  return kept.join("\n").trim().replace(/:\s*$/, ".");
+}
+function formatText(text, rowsShown) {
   const nodes = [];
   let list = null;
+  if (rowsShown) text = dropQuestionList(text);
   for (const raw of String(text).split("\n")) {
     const line = raw.trim();
     if (!line) { list = null; continue; }
@@ -187,6 +198,9 @@ export function createTranscript(root, { onChoice }) {
     return showSingle(set, onPick);
   }
 
+  // Two or more labelled rows are offered for the question AISA is asking now (see dropQuestionList).
+  const rowsOffered = () => !!(offered && Array.isArray(offered.set.rows) && offered.set.rows.length >= 2);
+
   // The open AISA bubble that the next piece of the same reply can join.
   let open = null;
   // The flow says when an acknowledgement (7B rapport, "I see you recently moved...") may open AISA's next reply
@@ -217,7 +231,7 @@ export function createTranscript(root, { onChoice }) {
         open.pieces += 1;
         open.at = now;
         lastBotAt = now;
-        open.body.replaceChildren(...formatText(open.text));
+        open.body.replaceChildren(...formatText(open.text, rowsOffered()));
         const h = history[history.length - 1];
         if (h && h.from === "aisa") h.text = open.text.slice(0, 600);
         if (choices.length) this.actions(choices);
@@ -234,7 +248,7 @@ export function createTranscript(root, { onChoice }) {
       // No visible name, avatar or "spoken" tag (2026-10-14, Sascha): only AISA and the customer are in this chat, and
       // the layout shows who is who. Screen readers still hear who said it.
       const who = from === "user" ? "You:" : "AISA:";
-      const body = el("div", { class: "msg-body tds-chat__message-content" }, ...(text ? (from === "bot" ? formatText(text) : [el("p", { class: "msg-text" }, text)]) : []));
+      const body = el("div", { class: "msg-body tds-chat__message-content" }, ...(text ? (from === "bot" ? formatText(text, rowsOffered()) : [el("p", { class: "msg-text" }, text)]) : []));
       // TDS chat message: plain for AISA (long replies), bubble for the customer (TDS AI & Chat guidance).
       const bubble = el("div", { class: `msg msg-${from} tds-chat__message${from === "user" ? " tds-chat__message--bubble" : ""}` },
         el("span", { class: "visually-hidden" }, who),
