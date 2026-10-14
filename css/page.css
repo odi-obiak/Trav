@@ -162,7 +162,7 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 
 /* ---------- Composer: one bar for typing and talking (2026-10-14, Sascha's review) ----------
    Upload, the message, the mic and send sit in one rounded bar, like a modern chat app. During a call the same bar
-   shows the call (bars, "Listening", clock) with mute and "back to typing"; typing still works on a call. */
+   shows the call (bars, "Listening", clock) with mute and a red hang-up; typing still works on a call. */
 .composer { flex: none; padding: 12px 0 16px; border-top: 1px solid var(--line); background: #fff; }
 .composer-row { container-type: inline-size; }
 .composer-bar {
@@ -188,12 +188,19 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .composer-note { margin: 8px 0 0; color: var(--muted); text-align: center; }
 
 /* Which buttons show depends on the channel. */
-.bar-mute, .bar-type, .call-status { display: none; }
+.bar-mute, .bar-end, .call-status { display: none; }
 body[data-channel="voice"] .bar-mic { display: none; }
-body[data-channel="voice"] .bar-mute, body[data-channel="voice"] .bar-type { display: inline-grid; }
+body[data-channel="voice"] .bar-mute, body[data-channel="voice"] .bar-end { display: inline-grid; }
 body[data-channel="voice"] .call-status { display: inline-flex; }
 body[data-channel="voice"] .composer-bar { border-color: var(--red); }
 .bar-mute[aria-pressed="true"] { background: var(--navy); color: #fff; }
+/* Hang up: red, the handset turned down, like every phone app. */
+.bar-end { background: var(--red); color: #fff; }
+.bar-end:hover { background: var(--red-dark); color: #fff; }
+.bar-end svg { width: 18px; height: 18px; transform: rotate(135deg); }
+/* On a call the send arrow turns navy, so the only red button is the hang-up. */
+body[data-channel="voice"] .bar-send { background: var(--navy); }
+body[data-channel="voice"] .bar-send:hover { background: var(--navy-soft); }
 .bar-mute[aria-pressed="true"]::after { content: ""; position: absolute; width: 2px; height: 26px; background: currentColor; transform: rotate(45deg); border-radius: 1px; }
 
 /* The call, inside the bar. */

@@ -29,7 +29,6 @@
 <!-- Not in the TDS sprite on this page; simple strokes drawn to match the TDS line weight (2026-10-14). -->
 <symbol id="paperclip-24" viewBox="0 0 24 24"><path d="M20.5 11.5l-8.1 8.1a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="arrow-up-24" viewBox="0 0 24 24"><path d="M12 19V5m-6 6l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="keyboard-24" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6.5 10h.01M10 10h.01M14 10h.01M17.5 10h.01M8 14h8"/></g></symbol>
 <symbol id="chevron-left-18" viewBox="0 0 18 18"><path d="M11.5 3.5L6 9l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="chevron-right-18" viewBox="0 0 18 18"><path d="M6.5 3.5L12 9l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
@@ -120,7 +119,7 @@
         <span class="quote-peek__chev" aria-hidden="true"></span>
       </button>
       <!-- One input bar for typing and talking (2026-10-14, Sascha's review): upload, the message, the mic and send. During
-           a call the same bar shows the call (listening, clock) with mute and "back to typing", and typing still works. -->
+           a call the same bar shows the call (listening, clock) with mute and a red hang-up, and typing still works. -->
       <form class="composer-row" data-composer-form>
         <div class="composer-bar">
           <button class="bar-btn attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF). You can also drop a file on the chat.">
@@ -141,8 +140,10 @@
           <button class="bar-btn bar-mute" data-action="mute" type="button" aria-pressed="false" aria-label="Mute" title="Mute">
             <svg aria-hidden="true"><use href="#microphone-1-24"></use></svg>
           </button>
-          <button class="bar-btn bar-type" data-action="hang-up" type="button" aria-label="Stop talking and type instead" title="Stop talking and type instead">
-            <svg aria-hidden="true"><use href="#keyboard-24"></use></svg>
+          <!-- A clear red hang-up (2026-10-14, Odiche: the keyboard icon didn't read as "end the call"). Typing keeps working
+               after it: the conversation carries on in chat. -->
+          <button class="bar-btn bar-end" data-action="hang-up" type="button" aria-label="End call" title="End call. You can keep typing.">
+            <svg aria-hidden="true"><use href="#phone-1-18"></use></svg>
           </button>
           <button class="bar-btn bar-send" type="submit" aria-label="Send" title="Send">
             <svg aria-hidden="true"><use href="#arrow-up-24"></use></svg>
