@@ -477,6 +477,16 @@ window.addEventListener("message", (event) => {
     if (m.status === "preparing" || m.status === "uploading") setAttachPhase("uploading", 90000);
     else if (m.status === "uploaded") setAttachPhase("reading", 60000);
     else if (m.status === "failed" || m.status === "declined") setAttachPhase(null);
+    // "I'd rather keep talking": the screen is done, so close its card (and the drawer on a phone) instead of leaving the
+    // xApp shell's empty page showing.
+    // The screen submits its result right after this status, so close a moment later, never mid-submit.
+    if (m.status === "declined") {
+      panel.coverXapp("Okay, let's keep talking.");
+      setTimeout(() => {
+        panel.closeXapp();
+        if (phone.matches) setDrawer(false, { byCustomer: false });
+      }, 2500);
+    }
     // The screen submits right after this, and the xApp shell then shows an empty page: show progress instead. The
     // flow closes the card once the page is read (or found unreadable), which clears this.
     if (m.status === "uploaded") {

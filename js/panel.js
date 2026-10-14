@@ -54,7 +54,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   const advisorCard = root.querySelector("[data-advisor-card]");
   const advisorText = root.querySelector("[data-advisor-summary]");
   // Dismissed cards stay hidden until the flow sends something new (a new screen or a changed summary).
-  const dismissed = { xapp: null, advisor: null };
+  const dismissed = { xapp: null, advisor: null, closed: null };
   xappFrame.addEventListener("load", () => { if (xappFrame.getAttribute("src")) xappLoading.hidden = true; });
   root.querySelectorAll("[data-dismiss]").forEach((b) => b.addEventListener("click", () => {
     const which = b.dataset.dismiss;
@@ -189,7 +189,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     wrap.append(advisor);
     // The advisor summary and the rate screen live in cards at the top of the panel; bring them back if dismissed.
     const again = [];
-    if (state.xappUrl && dismissed.xapp === state.xappUrl) again.push(["Show the rate page again", "xapp"]);
+    if (state.xappUrl && dismissed.xapp === state.xappUrl && dismissed.closed !== state.xappUrl) again.push(["Show the rate page again", "xapp"]);
     if (state.advisorSummary && dismissed.advisor === state.advisorSummary) again.push(["Show the advisor summary again", "advisor"]);
     for (const [label, which] of again) {
       const b = el("button", { class: "tds-button--tertiary tds-button--small link-btn show-again", type: "button" }, label);
@@ -340,7 +340,24 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     }
   }
 
-  return { render, showXappStatus, clearXappStatus };
+  // The screen itself finished without a result (the customer chose to keep talking): close its card, with no "show again"
+  // (2026-10-14, live: the card stayed open on the xApp shell's empty "There is nothing to do here right now").
+  // A cover over the screen that leaves the frame running underneath: hiding the frame (display: none) right after the
+  // screen's "declined" stopped its submission from reaching AISA (2026-10-14, live).
+  function coverXapp(text) {
+    xappCard.querySelector(".xapp-cover")?.remove();
+    xappCard.append(el("div", { class: "xapp-cover", role: "status" }, el("p", {}, text)));
+  }
+  function closeXapp() {
+    xappCard.querySelector(".xapp-cover")?.remove();
+    if (!state || !state.xappUrl) return;
+    dismissed.xapp = state.xappUrl;
+    dismissed.closed = state.xappUrl;
+    clearXappStatus();
+    render(state);
+  }
+
+  return { render, showXappStatus, clearXappStatus, closeXapp, coverXapp };
 }
 
 function renderAdvisorCard(container, record, fallbackText, reasons) {

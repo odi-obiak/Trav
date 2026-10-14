@@ -193,6 +193,14 @@ export function createTranscript(root, { onChoice }) {
   // (aisa_ui.ack). The stream drops line breaks, so that opening sentence is given its own line here (Odiche, 2026-10-12).
   let ackUntil = 0;
 
+  function umbrella() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#trv-umbrella");
+    svg.append(use);
+    return el("span", { class: "msg-avatar", "aria-hidden": "true" }, svg);
+  }
+
   return {
     add({ from, text, choices = [], via, image, mid }) {
       const channel = via || "chat";
@@ -230,6 +238,9 @@ export function createTranscript(root, { onChoice }) {
       // TDS chat message: plain for AISA (long replies), bubble for the customer (TDS AI & Chat guidance).
       const bubble = el("div", { class: `msg msg-${from} tds-chat__message${from === "user" ? " tds-chat__message--bubble" : ""}` },
         el("span", { class: "visually-hidden" }, who),
+        // AISA's avatar: the Travelers umbrella beside its messages (2026-10-14, Odiche asked to bring it back). No name or
+        // "spoken" tag (Sascha's review); the customer's own messages need nothing.
+        from === "bot" ? umbrella() : null,
         body,
         image ? el("img", { class: "msg-image", src: image, alt: "Your document" }) : null);
       list.append(bubble);

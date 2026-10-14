@@ -118,6 +118,13 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .msg-text { margin: 0; font-size: 1rem; line-height: 1.6; white-space: pre-wrap; }
 /* TDS Chat Message (Figma 8.8.0): the plain variant fills its container, so cap it at a comfortable measure (~66 characters; average text is about half an em wide, `ch` is wider). */
 .msg-bot .msg-body { max-width: 34em; }
+/* AISA's avatar: the Travelers umbrella beside its messages, once per run of messages (2026-10-14). */
+.msg-bot { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 12px; align-items: start; }
+.msg-bot > .msg-body, .msg-bot > .msg-image { grid-column: 2; }
+.msg-avatar { grid-column: 1; grid-row: 1 / span 2; display: grid; place-items: center; width: 28px; height: 28px; margin-top: 1px; }
+.msg-avatar svg { width: 28px; height: 24px; }
+.msg-bot + .msg-bot .msg-avatar { visibility: hidden; }
+.choices, .choices-rows { margin-left: 40px; }
 .msg-body > * + * { margin-top: 8px; }
 .msg-list { margin: 0; padding-left: 22px; font-size: 1rem; line-height: 1.6; }
 .msg-body > .msg-heading:not(:first-child) { margin-top: 14px; }
@@ -131,7 +138,7 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .msg-image { display: block; max-width: min(260px, 100%); max-height: 260px; margin-top: 6px; border-radius: 4px; border: 1px solid var(--navy-l4); }
 
 /* Answer buttons under AISA's latest message (TDS secondary small buttons). */
-.choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; padding-left: 4px; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; padding-left: 0; }
 .choice {
   font-family: inherit; font-size: 0.875rem; font-weight: 600; line-height: 1.5; letter-spacing: 0.046875rem;
   cursor: pointer; background: #fff; color: var(--red); border: 1px solid var(--red); border-radius: 0.1875rem;
@@ -147,14 +154,14 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .choice-toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; box-shadow: none; }
 .choice-toggle[aria-pressed="true"]::before { content: "\2713  "; white-space: pre; }
 /* A grouped question (2026-10-11): one labelled row of buttons per part, one Done for all. */
-.choices-rows { display: grid; gap: 12px; align-self: stretch; margin-left: 4px; padding: 4px 0 4px 14px; border-left: 3px solid var(--navy-l4); }
+.choices-rows { display: grid; gap: 12px; align-self: stretch; padding: 4px 0 4px 14px; border-left: 3px solid var(--navy-l4); }
 .choice-row { display: grid; gap: 6px; }
 .choice-row__label { font-size: 0.875rem; font-weight: 600; color: var(--ink); }
 .choice-row__options { display: flex; flex-wrap: wrap; gap: 8px; }
 .choice-row__done { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .choice-row__done .choices-hint { flex-basis: auto; }
 
-.typing { display: flex; gap: 4px; padding: 0 4px 8px 8px; }
+.typing { display: flex; gap: 4px; padding: 0 4px 8px 44px; }
 .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--navy-soft); animation: blink 1.2s infinite ease-in-out; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
@@ -362,6 +369,10 @@ body:not(.in-conversation) .panel-actions { display: none; }
 /* Cards at the top of the panel: xApp screens and the advisor handoff. */
 .xapp-card { margin: 16px 20px 0; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 12px; box-shadow: 0 0.0625rem 0.125rem rgba(51, 93, 121, 0.07), 0 0.125rem 0.25rem rgba(51, 93, 121, 0.07); }
 .xapp-card h3 { font-size: 0.9375rem; margin: 0; color: var(--navy); }
+.xapp-card { position: relative; }
+/* Covers the screen while it finishes submitting (app.js "declined"); the frame keeps running underneath. */
+.xapp-cover { position: absolute; inset: 48px 12px 12px; display: grid; place-items: center; background: #fff; border-radius: 4px; }
+.xapp-cover p { margin: 0; font-size: 0.9375rem; color: var(--navy); }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .card-close { font: inherit; font-size: 1.25rem; line-height: 1; cursor: pointer; background: none; border: 0; color: var(--muted); padding: 2px 6px; border-radius: 4px; }
 .card-close:hover { background: var(--blue-soft); color: var(--navy); }
