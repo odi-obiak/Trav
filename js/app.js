@@ -27,7 +27,9 @@ const entry = {
   // This page shows aisa_ui.choices as buttons, so the flow can stop naming every option in AISA's text (and on a call,
   // point to the screen instead of reading a list). An older page leaves this out and keeps the spoken or typed options.
   // multiChoices: tick boxes for "select all that apply"; rowChoices: a row of buttons per part of a grouped question (2026-10-11)
-  ui: { choices: true, multiChoices: true, rowChoices: true },
+  // disclosureShown: this page shows the AI-assistant and recording note under the input, so the welcome can leave it
+  // out (2026-10-14, Sascha's review). A UI that doesn't show it leaves this out and the welcome keeps the disclosure.
+  ui: { choices: true, multiChoices: true, rowChoices: true, disclosureShown: true },
 };
 
 const $ = (sel) => document.querySelector(sel);

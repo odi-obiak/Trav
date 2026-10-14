@@ -9,8 +9,8 @@ export const DEFAULT_CATALOG = {
   v: 1,
   steps: [
     { id: "client", title: "About You", topic: "personal", keyPrefix: "client" },
-    { id: "vehicles", title: "Add Vehicles", topic: "vehicle", keyPrefix: "vehicle", entity: { noun: "vehicle", nameJoin: ["year", "make", "model"] } },
-    { id: "drivers", title: "Add Drivers", heading: "Driver details", topic: "driver", keyPrefix: "driver", entity: { noun: "driver", nameJoin: ["firstName", "lastName"] } },
+    { id: "vehicles", title: "Vehicles", topic: "vehicle", keyPrefix: "vehicle", entity: { noun: "vehicle", nameJoin: ["year", "make", "model"] } },
+    { id: "drivers", title: "Drivers", heading: "Driver details", topic: "driver", keyPrefix: "driver", entity: { noun: "driver", nameJoin: ["firstName", "lastName"] } },
     { id: "losses", title: "Driving History", heading: "Accidents, tickets and claims", topic: "driving history", keyPrefix: "loss", entity: { noun: "incident", nameFirstOf: ["description", "type"] } },
     { id: "policy", title: "Current Insurance", topic: "current insurance", keyPrefix: "policy" },
     { id: "review", title: "Review", kind: "review" },
