@@ -218,6 +218,12 @@ async function startVoice(fromChat) {
     pendingSwitchFromChat = Boolean(fromChat);
     store.set({ channel: "voice" });
     debugNote(fromChat ? "Switching to voice." : "Starting a voice conversation in the browser.");
+    // Tell chat a call is starting, before it connects (2026-10-14): if nothing has been saved yet, chat saves the open
+    // question for the call to pick up, so the call carries on instead of welcoming the customer again. Silent on chat.
+    if (fromChat && chat.started) {
+      await chat.send("", { aisa_event: { type: "voice_starting", quoteId } }, { echo: false, typing: false }).catch(() => {});
+      await new Promise((r) => setTimeout(r, 800)); // let the flow save it before the call's first turn reads it
+    }
     // Step 7: the chat's state and last turns are in the Contact Profile; the entry only says where the call came from.
     await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null });
   } catch (err) {
