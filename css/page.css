@@ -193,6 +193,16 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .bar-send svg { width: 20px; height: 20px; }
 .bar-send:hover { background: var(--red-dark); color: #fff; }
 .composer-note { margin: 8px 0 0; color: var(--muted); text-align: center; }
+/* The standing upload note above the bar (2026-10-14): the welcome no longer says it, so the page always shows it. */
+.upload-note { margin: 0 4px 8px; color: var(--muted); line-height: 1.4; }
+.upload-note__link {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--navy); text-decoration: underline; text-underline-offset: 2px;
+}
+.upload-note__link svg { width: 16px; height: 16px; fill: currentColor; }
+.upload-note__link:hover { color: var(--blue); }
+.upload-note__link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 2px; }
+@media (max-width: 600px) { .upload-note__eg { display: none; } } /* phones: one or two lines, without the examples */
 
 /* Which buttons show depends on the channel. */
 .bar-mute, .bar-end, .call-status { display: none; }

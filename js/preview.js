@@ -4,7 +4,7 @@
 // a switch to voice (Step 7), drivers, and one glass claim (Step 6).
 export const PREVIEW_SCRIPT = [
   {
-    bot: "Hi, I'm AISA, Travelers' AI assistant. I'll put your auto quote together with you. If you have any auto insurance documents handy, like a declaration page, driver's license, or insurance card, you can upload them and I'll only ask what's missing. First, what's your full name?",
+    bot: "Welcome to Travelers. I'm AISA, your AI assistant for auto quotes. To get started, are you currently a Travelers customer? And what's your full name?",
     choices: [{ title: "Upload a document", payload: "upload" }],
     ui: { section: "client", progress: { done: 0, total: 24 } },
   },
