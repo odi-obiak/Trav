@@ -90,7 +90,7 @@ body:not(.in-conversation) .conversation { overflow-y: auto; }
 .offer h1 { margin: 12px 0; max-width: 22ch; color: var(--navy); }
 .lede { max-width: 58ch; margin: 0 0 32px; color: var(--ink); }
 .choose-title { margin: 0 0 12px; color: var(--ink); }
-.start-options { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.start-options { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .start-option { margin: 0; cursor: pointer; }
 .start-option .tds-card__body { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .start-icon { width: 32px; height: 32px; color: var(--blue); fill: currentColor !important; }
@@ -194,6 +194,8 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .bar-btn svg { width: 22px; height: 22px; fill: currentColor; }
 .bar-btn:hover { background: var(--navy-l5); color: var(--navy); }
 .bar-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+/* Disabled until AISA's welcome arrives (uploads open only after On First Time, 2026-10-16). */
+.bar-btn:disabled { opacity: 0.4; cursor: not-allowed; background: none; color: inherit; }
 .bar-send { background: var(--red); color: #fff; }
 .bar-send svg { width: 20px; height: 20px; }
 .bar-send:hover { background: var(--red-dark); color: #fff; }

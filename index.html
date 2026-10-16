@@ -90,13 +90,6 @@
             <p class="tds-small start-sub">Type your answers at your own pace. You can switch to talking at any time.</p>
           </div>
         </li>
-        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option" data-clickable="#start-upload">
-          <div class="tds-card__body">
-            <svg class="start-icon" aria-hidden="true"><use href="#documents-1-24"></use></svg>
-            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-upload" data-action="start-upload" type="button">Start with a document</button>
-            <p class="tds-small start-sub">Upload your declaration page, insurance card, license or registration (PDF or photo). AISA fills in what it can, then asks only for what's missing.</p>
-          </div>
-        </li>
       </ul>
 
       <p class="connection" aria-label="Connection status">
@@ -124,14 +117,14 @@
            a call the same bar shows the call (listening, clock) with mute and a red hang-up, and typing still works. -->
       <!-- A quiet hint above the bar (2026-10-14, restyled 2026-10-15, Odiche: more modern, no link; the paperclip already
            uploads). The chat welcome leaves its upload line out because this is always on screen (aisa_entry.ui.uploadNoteShown). -->
-      <p class="upload-hint" data-upload-note>
+      <p class="upload-hint" data-upload-note hidden>
         <svg aria-hidden="true"><use href="#paperclip-24"></use></svg>
         <span class="upload-hint__long" data-upload-note-long>Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.</span>
         <span class="upload-hint__short" data-upload-note-short>Add any auto document with the paperclip.</span>
       </p>
       <form class="composer-row" data-composer-form>
         <div class="composer-bar">
-          <button class="bar-btn attach-btn" data-action="attach" data-attach type="button" title="Upload a declaration page, insurance card, license or registration (photo or PDF). You can also drop a file on the chat.">
+          <button class="bar-btn attach-btn" data-action="attach" data-attach type="button" disabled title="Upload a declaration page, insurance card, license or registration (photo or PDF). You can also drop a file on the chat.">
             <svg class="attach-icon" aria-hidden="true"><use href="#paperclip-24"></use></svg>
             <span class="attach-spin" aria-hidden="true"></span>
             <span class="visually-hidden" data-attach-label>Upload document</span>

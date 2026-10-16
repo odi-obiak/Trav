@@ -64,10 +64,28 @@ const transcript = createTranscript($("[data-conversation]"), {
   onChoice: (c) => sendText(c.title, c.payload),
 });
 
+// ---- Uploads open only after AISA's first message (2026-10-16, Odiche): the customer meets AISA (Once > On First Time,
+// the welcome) before a document can be shared. Until then the paperclip is disabled, the upload note is hidden and a
+// dropped file is ignored. Any AISA message on either channel opens them, and a resumed session gets its welcome too.
+let aisaHasSpoken = false;
+function allowUploads() {
+  if (aisaHasSpoken) return;
+  aisaHasSpoken = true;
+  document.body.classList.add("uploads-open");
+  const btn = $("[data-attach]");
+  if (btn) btn.disabled = false;
+  const note = $("[data-upload-note]");
+  if (note) note.hidden = false;
+}
+function fromAisa(m) {
+  if (m && m.from === "bot") allowUploads();
+  transcript.add(m);
+}
+
 const chat = createChat({
   config: CONFIG,
   identity,
-  onMessage: (m) => transcript.add(m),
+  onMessage: fromAisa,
   onUi: (ui) => {
     if (ui && ui.ack === true) transcript.expectAck();
     store.applyUi(ui);
@@ -150,7 +168,7 @@ const voice = createVoice({
   config: CONFIG,
   identity,
   onReady: resendScreen,
-  onMessage: (m) => transcript.add(m),
+  onMessage: fromAisa,
   onUi: (ui) => { if (ui && ui.ack === true) transcript.expectAck(); store.applyUi(ui); },
   onStatus: (s) => {
     setChip("voice", s);
@@ -285,10 +303,9 @@ function talkToPerson() {
 // ---- Declaration page (Step 3): AISA opens an upload screen (xApp) in the panel, on chat and voice alike. The screen
 // uploads the file straight to the bucket; the page never handles the document. These buttons only ask for the screen.
 async function requestUpload() {
-  if (attachBusy()) return;
+  if (!aisaHasSpoken || attachBusy()) return; // no upload before AISA's welcome (see allowUploads)
   setAttachPhase("opening", 12000);
   enterConversation();
-  if (store.get().channel === "idle") return startChat("upload_dec_page");
   return sendEvent(CONFIG.uploadText, { aisa_event: { type: "upload_requested", quoteId } });
 }
 
@@ -533,7 +550,7 @@ function offerDroppedFile(target) {
   }, 3000);
 }
 conversationEl.addEventListener("dragenter", (e) => {
-  if (!draggingFiles(e) || !document.body.classList.contains("in-conversation")) return;
+  if (!draggingFiles(e) || !aisaHasSpoken) return;
   e.preventDefault();
   dragDepth += 1;
   conversationEl.classList.add("drop-target");
@@ -553,7 +570,7 @@ conversationEl.addEventListener("drop", (e) => {
   dragDepth = 0;
   conversationEl.classList.remove("drop-target");
   const file = e.dataTransfer.files && e.dataTransfer.files[0];
-  if (!file) return;
+  if (!file || !aisaHasSpoken) return;
   if (!DROP_TYPES.test(file.type)) return say("That file can't be read. Share a photo (JPEG or PNG) or a PDF.");
   pendingDrop = { file, at: Date.now() };
   if (screenWindow && xappKind === "dec_upload" && store.get().xappUrl) return offerDroppedFile(screenWindow);
@@ -567,7 +584,6 @@ window.addEventListener("drop", (e) => { if (draggingFiles(e)) e.preventDefault(
 const on = (action, fn) => document.querySelectorAll(`[data-action="${action}"]`).forEach((b) => b.addEventListener("click", fn));
 on("start-chat", () => startChat());
 on("start-voice", () => startVoice(false));
-on("start-upload", requestUpload);
 on("upload", requestUpload);
 on("attach", requestUpload);
 on("switch-voice", () => startVoice(true));
@@ -671,7 +687,7 @@ if (isPreview) {
         else stopClock();
       }
       if (step.note) (step.channel ? debugNote : transcript.note)(step.note); // a channel switch note is technical, like the live ones
-      if (step.bot) transcript.add({ from: "bot", text: step.bot, choices: step.choices || [], via: step.via || "chat" });
+      if (step.bot) fromAisa({ from: "bot", text: step.bot, choices: step.choices || [], via: step.via || "chat" });
       if (step.user) transcript.add({ from: "user", text: step.user, via: step.via || "chat" });
       if (step.ui) store.applyUi(step.ui);
     }, t);
