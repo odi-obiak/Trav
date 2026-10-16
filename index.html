@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Auto Quote Assistant (demo)</title>
 <!-- Travelers enterprise fonts (Batterson Sans). Falls back to the system sans if the CDN can't be reached. -->
 <link rel="stylesheet" href="https://cdn.travelers.com/fonts/2.1/allfonts.min.css">
@@ -122,12 +122,12 @@
       </button>
       <!-- One input bar for typing and talking (2026-10-14, Sascha's review): upload, the message, the mic and send. During
            a call the same bar shows the call (listening, clock) with mute and a red hang-up, and typing still works. -->
-      <!-- Always on screen (2026-10-14, Odiche): a document can be added at any time, so AISA's welcome no longer says it
-           (aisa_entry.ui.uploadNoteShown). The link opens the same upload screen as the paperclip. -->
-      <p class="upload-note tds-small" data-upload-note>
-        <button class="upload-note__link" data-action="attach" type="button">
-          <svg aria-hidden="true"><use href="#paperclip-24"></use></svg><span data-upload-note-link>Add a document</span></button>
-        <span data-upload-note-rest>any time<span class="upload-note__eg">, like your declaration page, insurance card or license,</span> and AISA only asks what's missing.</span>
+      <!-- A quiet hint above the bar (2026-10-14, restyled 2026-10-15, Odiche: more modern, no link; the paperclip already
+           uploads). The chat welcome leaves its upload line out because this is always on screen (aisa_entry.ui.uploadNoteShown). -->
+      <p class="upload-hint" data-upload-note>
+        <svg aria-hidden="true"><use href="#paperclip-24"></use></svg>
+        <span class="upload-hint__long" data-upload-note-long>Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.</span>
+        <span class="upload-hint__short" data-upload-note-short>Add any auto document with the paperclip.</span>
       </p>
       <form class="composer-row" data-composer-form>
         <div class="composer-bar">

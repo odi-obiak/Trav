@@ -6,7 +6,7 @@ import { createPanel } from "./panel.js";
 import { createTranscript } from "./transcript.js";
 import { createScreenReporter } from "./screen.js";
 import { PREVIEW_SCRIPT } from "./preview.js";
-import { randomId, formatClock, debug, el } from "./util.js";
+import { randomId, formatClock, debug } from "./util.js";
 
 const params = new URLSearchParams(location.search);
 const isPreview = params.get("preview") === "1";
@@ -318,12 +318,11 @@ function renderAttach() {
   const count = attachBtn.querySelector("[data-attach-count]");
   count.hidden = !read || busy;
   count.textContent = String(read); // " read" is added by CSS, dropped on phones
-  // The standing note above the bar says the same thing in words; after a read it invites another document.
-  const noteLink = $("[data-upload-note-link]"), noteRest = $("[data-upload-note-rest]");
-  if (noteLink && noteRest) {
-    noteLink.textContent = read ? "Add another document" : "Add a document";
-    noteRest.replaceChildren(...(read ? ["any time. AISA reads it and only asks what's missing."]
-      : ["any time", el("span", { class: "upload-note__eg" }, ", like your declaration page, insurance card or license,"), " and AISA only asks what's missing."]));
+  // The hint above the bar says the same thing in words; after a read it invites another document.
+  const noteLong = $("[data-upload-note-long]"), noteShort = $("[data-upload-note-short]");
+  if (noteLong && noteShort) {
+    noteLong.textContent = read ? `${read} document${read === 1 ? "" : "s"} read. Add another any time with the paperclip.` : "Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.";
+    noteShort.textContent = read ? `${read} document${read === 1 ? "" : "s"} read. Add another with the paperclip.` : "Add any auto document with the paperclip.";
   }
 }
 function pulseAttach() {
