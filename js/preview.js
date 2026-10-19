@@ -38,7 +38,7 @@ export const PREVIEW_SCRIPT = [
         { key: "vehicle[0].year", label: "Year", value: "2021", source: "extracted" },
         { key: "vehicle[0].make", label: "Make", value: "Ford", source: "extracted" },
         { key: "vehicle[0].model", label: "Model", value: "Escape", source: "extracted" },
-        { key: "vehicle[0].body_style", label: "Body Style", value: "4D SUV", source: "prefilled" },
+        { key: "vehicle[0].body_style", label: "Body Style", value: "SUV", source: "prefilled" },
         { key: "driver[0].first_name", label: "First Name", value: "Alex", source: "extracted" },
         { key: "driver[0].last_name", label: "Last Name", value: "Smith", source: "extracted" },
         { key: "driver[1].first_name", label: "First Name", value: "Jane", source: "extracted" },

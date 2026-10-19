@@ -115,6 +115,12 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
     async send(text, data) {
       if (!client || !inCall) return false;
       debug("voice out", text, data);
+      // Voice Gateway rewrites SIP INFO keys (dots and capitals), which broke row taps whose keys are field paths
+      // ("vehicles.0.ownership"). Events go as one JSON string, the same as the entry (aisa_entry_json).
+      if (data && data.aisa_event && typeof data.aisa_event === "object") {
+        const { aisa_event: event, ...rest } = data;
+        data = { ...rest, aisa_event_json: JSON.stringify(event) };
+      }
       await client.sendInfo(text || "", data);
       if (text) onMessage({ from: "user", text, via: "typed" });
       return true;
