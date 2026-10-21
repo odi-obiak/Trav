@@ -201,13 +201,11 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 .bar-send svg { width: 20px; height: 20px; }
 .bar-send:hover { background: var(--red-dark); color: #fff; }
 .composer-note { margin: 8px 0 0; color: var(--muted); text-align: center; }
-/* The upload hint above the bar (2026-10-14; a quiet chip since 2026-10-15): the welcome no longer says it. No link: the
-   paperclip in the bar is the one way to upload. */
-.upload-hint {
-  display: flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; margin: 0 0 10px; padding: 5px 12px 5px 10px;
-  border-radius: 999px; background: var(--navy-l5); color: var(--navy-soft); font-size: 0.8125rem; line-height: 1.35;
-}
-.upload-hint svg { width: 14px; height: 14px; fill: currentColor; }
+/* The upload hint, under the bar with the disclaimer and in the same quiet style (2026-10-21, Odiche; a chip above the
+   bar before). No link: the paperclip in the bar is the one way to upload. */
+.upload-hint { margin: 8px 0 0; color: var(--muted); text-align: center; } /* size from .tds-small, like the disclaimer */
+.upload-hint svg { display: inline-block; width: 13px; height: 13px; margin-right: 4px; vertical-align: -2px; fill: currentColor; }
+.upload-hint:not([hidden]) + .composer-note { margin-top: 2px; }
 .upload-hint__short { display: none; }
 @media (max-width: 600px) { .upload-hint__long { display: none; } .upload-hint__short { display: inline; } }
 @media (max-width: 600px) { .offer { padding-top: 20px; } .offer h1 { font-size: clamp(1.75rem, 7.5vw, 2.25rem); line-height: 1.2; } .lede { margin-bottom: 24px; } }
@@ -499,7 +497,7 @@ body.panel-hidden .panel-inner { display: none; }
   body:not(.in-conversation) .quote-panel { display: none; }
   .composer { padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
   .composer-note { margin-top: 6px; font-size: 0.75rem; line-height: 1.35; }
-  .upload-hint { margin-bottom: 8px; }
+  .upload-hint { margin-top: 6px; font-size: 0.75rem; line-height: 1.35; }
 
   /* The quote as a TDS Drawer from the right (tds.min.css .tds-drawer: fixed, max 30rem, shadow-6, z-index 1040), opened
      from the bar above the composer. app.js opens it on its own for the upload screen, Review, the rate page and the

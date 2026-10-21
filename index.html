@@ -118,13 +118,6 @@
       </button>
       <!-- One input bar for typing and talking (2026-10-14, Sascha's review): upload, the message, the mic and send. During
            a call the same bar shows the call (listening, clock) with mute and a red hang-up, and typing still works. -->
-      <!-- A quiet hint above the bar (2026-10-14, restyled 2026-10-15, Odiche: more modern, no link; the paperclip already
-           uploads). The chat welcome leaves its upload line out because this is always on screen (aisa_entry.ui.uploadNoteShown). -->
-      <p class="upload-hint" data-upload-note hidden>
-        <svg aria-hidden="true"><use href="#paperclip-24"></use></svg>
-        <span class="upload-hint__long" data-upload-note-long>Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.</span>
-        <span class="upload-hint__short" data-upload-note-short>Add any auto document with the paperclip.</span>
-      </p>
       <form class="composer-row" data-composer-form>
         <div class="composer-bar">
           <button class="bar-btn attach-btn" data-action="attach" data-attach type="button" disabled title="Upload a declaration page, insurance card, license or registration (photo or PDF). You can also drop a file on the chat.">
@@ -155,6 +148,14 @@
           </button>
         </div>
       </form>
+      <!-- The upload hint sits with the disclaimer under the bar (2026-10-21, Odiche; it was a chip above the bar). No link: the
+           paperclip already uploads. The chat welcome leaves its upload line out because this is always on screen
+           (aisa_entry.ui.uploadNoteShown). -->
+      <p class="tds-small upload-hint" data-upload-note hidden>
+        <svg aria-hidden="true"><use href="#paperclip-24"></use></svg>
+        <span class="upload-hint__long" data-upload-note-long>Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.</span>
+        <span class="upload-hint__short" data-upload-note-short>Add any auto document with the paperclip.</span>
+      </p>
       <p class="tds-small composer-note">AISA is an AI assistant, not a licensed advisor. This conversation may be monitored or recorded.</p>
     </div>
   </main>

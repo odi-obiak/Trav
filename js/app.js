@@ -29,7 +29,7 @@ const entry = {
   // multiChoices: tick boxes for "select all that apply"; rowChoices: a row of buttons per part of a grouped question (2026-10-11)
   // disclosureShown: this page shows the AI-assistant and recording note under the input, so the welcome can leave it
   // out (2026-10-14, Sascha's review). A UI that doesn't show it leaves this out and the welcome keeps the disclosure.
-  // uploadNoteShown: this page always shows "Add a document any time" above the input, so the chat welcome leaves out
+  // uploadNoteShown: this page always shows "Add a document any time" under the input, so the chat welcome leaves out
   // its upload line (2026-10-14, Odiche). The document offer after the address is unchanged.
   ui: { choices: true, multiChoices: true, rowChoices: true, disclosureShown: true, uploadNoteShown: true },
 };
@@ -335,7 +335,7 @@ function renderAttach() {
   const count = attachBtn.querySelector("[data-attach-count]");
   count.hidden = !read || busy;
   count.textContent = String(read); // " read" is added by CSS, dropped on phones
-  // The hint above the bar says the same thing in words; after a read it invites another document.
+  // The hint under the bar says the same thing in words; after a read it invites another document.
   const noteLong = $("[data-upload-note-long]"), noteShort = $("[data-upload-note-short]");
   if (noteLong && noteShort) {
     noteLong.textContent = read ? `${read} document${read === 1 ? "" : "s"} read. Add another any time with the paperclip.` : "Add a declaration page, insurance card or license any time with the paperclip. AISA only asks what's missing.";
