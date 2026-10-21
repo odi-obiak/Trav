@@ -118,7 +118,7 @@ export function createTranscript(root, { onChoice }) {
       done.disabled = !picked.size && !none;
     }
     lastChoices = el("div", { class: "choices choices-multi", role: "group", "aria-label": (set.label || "Choose") + ", select all that apply" },
-      el("span", { class: "choices-hint" }, "Select all that apply"), ...toggles, noneBtn, done);
+      el("span", { class: "choices-hint" }, "Select all that apply"), ...toggles, noneBtn, done, ...hintLine(set));
     list.append(lastChoices);
   }
 
@@ -128,7 +128,7 @@ export function createTranscript(root, { onChoice }) {
   function showRows(set, onPick) {
     if (set.rows.length === 1 && !set.rows[0].multi) {
       const r = set.rows[0];
-      return showSingle({ path: r.path, label: r.label, options: r.options }, (value) => onPick({ [r.path]: value }));
+      return showSingle({ path: r.path, label: r.label, options: r.options, hint: set.hint }, (value) => onPick({ [r.path]: value }));
     }
     const picked = {};
     const done = el("button", { class: "choice choice-primary", type: "button", disabled: "" }, "Done");
@@ -162,7 +162,7 @@ export function createTranscript(root, { onChoice }) {
     });
     lastChoices = el("div", { class: "choices choices-rows", role: "group", "aria-label": set.label || "Your answers" },
       ...rowEls, el("div", { class: "choice-row__done" }, done,
-        el("span", { class: "choices-hint" }, "Or type your answer. Anything you skip, AISA asks next.")));
+        el("span", { class: "choices-hint" }, set.hint || "Or type your answer. Anything you skip, AISA asks next.")));
     list.append(lastChoices);
   }
 
@@ -176,8 +176,13 @@ export function createTranscript(root, { onChoice }) {
           onPick(value);
         });
         return b;
-      }));
+      }), ...hintLine(set));
     list.append(lastChoices);
+  }
+  // The flow's line under the buttons (set.hint), e.g. "Not sure? That's fine, just say so." on a call, where AISA no longer
+  // says the options or "not sure" out loud (2026-10-21).
+  function hintLine(set) {
+    return set && set.hint ? [el("span", { class: "choices-hint" }, set.hint)] : [];
   }
 
   // The buttons wait for AISA's reply (2026-10-12, Odiche: they showed up before the question). The flow sends them just
@@ -217,6 +222,9 @@ export function createTranscript(root, { onChoice }) {
 
   return {
     add({ from, text, choices = [], via, image, mid }) {
+      // No em dashes in AISA's words (Travelers house style, 2026-10-21): the model sometimes writes one between words.
+      // A comma reads the same. Only AISA's text; the customer's own words are shown as typed.
+      if (from === "bot" && typeof text === "string") text = text.replace(/\s*\u2014\s*/g, ", ");
       const channel = via || "chat";
       const now = Date.now();
       const samePiece = channel === "voice" ? now - (open ? open.at : 0) < MERGE_WINDOW_MS.voice : !!mid && open && open.mid === mid;

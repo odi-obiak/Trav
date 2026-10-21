@@ -107,6 +107,8 @@ export function createStore() {
 }
 
 // The current question's options, from the flow. Only short strings are kept; anything else means no buttons.
+// A short line the flow wants under the buttons, like "Not sure? That's fine, just say so." during a call (2026-10-21).
+const hintOf = (c) => (typeof c.hint === "string" && c.hint.trim() && c.hint.length <= 120 ? { hint: c.hint.trim() } : {});
 function readChoices(c) {
   if (!c || typeof c !== "object" || typeof c.path !== "string") return null;
   // A question asked as one group (2026-10-11): a row of buttons per option list or yes/no part, one Done for all.
@@ -114,14 +116,15 @@ function readChoices(c) {
     const rows = c.rows.slice(0, 6).map((r) => {
       if (!r || typeof r.path !== "string") return null;
       const options = Array.isArray(r.options) ? r.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12) : [];
-      return options.length ? { path: r.path, label: typeof r.label === "string" ? r.label : "", options } : null;
+      // multi: a pick-any row (which Travelers policies they have); without it the row would only take one answer.
+      return options.length ? Object.assign({ path: r.path, label: typeof r.label === "string" ? r.label : "", options }, r.multi === true ? { multi: true } : {}) : null;
     }).filter(Boolean);
-    return rows.length ? { path: c.path, label: typeof c.label === "string" ? c.label : "", rows } : null;
+    return rows.length ? Object.assign({ path: c.path, label: typeof c.label === "string" ? c.label : "", rows }, hintOf(c)) : null;
   }
   if (!Array.isArray(c.options)) return null;
   const options = c.options.filter((o) => typeof o === "string" && o.trim() && o.length <= 60).slice(0, 12);
   if (!options.length) return null;
-  const set = { path: c.path, label: typeof c.label === "string" ? c.label : "", options };
+  const set = Object.assign({ path: c.path, label: typeof c.label === "string" ? c.label : "", options }, hintOf(c));
   // "Select all that apply" (2026-10-11): tick boxes plus a "none" option, answered with one Done.
   if (c.multi === true) Object.assign(set, { multi: true, none: typeof c.none === "string" && c.none.length <= 60 ? c.none : "None of these" });
   return set;
