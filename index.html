@@ -162,21 +162,24 @@
       <svg aria-hidden="true"><use href="#chevron-left-18"></use></svg>
     </button>
     <div class="panel-inner" id="quote-panel-inner">
-      <div class="panel-head">
-        <h2 id="quote-title" class="tds-h3">Your quote</h2>
-        <span class="tds-tag tds-tag--static pill" data-status hidden></span>
-        <span class="tds-tag tds-tag--static tds-tag--mint pill pill-eff" data-eff hidden aria-live="polite"></span>
-        <span class="tds-tag tds-tag--static tds-tag--mustard pill pill-preview" data-preview hidden>Sample data</span>
-        <button class="icon-btn panel-collapse" data-action="toggle-panel" type="button" aria-label="Hide your quote" title="Hide your quote">
-          <svg class="icon-desktop" aria-hidden="true"><use href="#chevron-right-18"></use></svg>
-          <svg class="icon-phone" aria-hidden="true"><use href="#x-1-18"></use></svg>
-        </button>
+      <!-- Title and step circles stay at the top while the step below scrolls (2026-10-20, Odiche). -->
+      <div class="panel-top" data-panel-top>
+        <div class="panel-head">
+          <h2 id="quote-title" class="tds-h3">Your quote</h2>
+          <span class="tds-tag tds-tag--static pill" data-status hidden></span>
+          <span class="tds-tag tds-tag--static tds-tag--mint pill pill-eff" data-eff hidden aria-live="polite"></span>
+          <span class="tds-tag tds-tag--static tds-tag--mustard pill pill-preview" data-preview hidden>Sample data</span>
+          <button class="icon-btn panel-collapse" data-action="toggle-panel" type="button" aria-label="Hide your quote" title="Hide your quote">
+            <svg class="icon-desktop" aria-hidden="true"><use href="#chevron-right-18"></use></svg>
+            <svg class="icon-phone" aria-hidden="true"><use href="#x-1-18"></use></svg>
+          </button>
+        </div>
+        <div class="progress" role="progressbar" aria-label="Quote steps" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
+          <div class="progress-bar" data-progress></div>
+        </div>
+        <ol class="step-list" data-step-list aria-label="Quote steps"></ol>
+        <p class="step-label" data-step-label>Step 1/7: About You</p>
       </div>
-      <div class="progress" role="progressbar" aria-label="Quote steps" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
-        <div class="progress-bar" data-progress></div>
-      </div>
-      <ol class="step-list" data-step-list aria-label="Quote steps"></ol>
-      <p class="step-label" data-step-label>Step 1/7: About You</p>
       <!-- Advisor handoff: stays at the top of the panel on every step and after a call ends, until dismissed. -->
       <section class="xapp-card advisor-card" data-advisor-card hidden aria-label="Shared with your licensed advisor">
         <div class="card-head">

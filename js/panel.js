@@ -336,7 +336,12 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     if (scrollTo) {
       const rowEl = body.querySelector(`[data-row="${CSS.escape(scrollTo)}"]`);
       scrollTo = null;
-      if (rowEl) rowEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (rowEl) {
+        // Keep the row clear of the pinned title and stepper (.panel-top) when scrolling it into view.
+        const top = root.querySelector("[data-panel-top]");
+        rowEl.style.scrollMarginTop = ((top && top.offsetHeight) || 0) + 8 + "px";
+        rowEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
     }
   }
 

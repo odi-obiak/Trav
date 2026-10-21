@@ -296,6 +296,9 @@ body.voice-connecting .call-status::before {
 @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .pill-eff.bump { animation: none; } }
 .panel-head, .progress, .step-label, .step-list, .xapp-card, .panel-body { flex-shrink: 0; }
+/* The title and stepper stay put while the step scrolls under them (2026-10-20, Odiche): .panel-inner is the scroll box,
+   so the wrapper sticks to its top. White background so the rows don't show through; rounded to match the panel. */
+.panel-top { position: sticky; top: 0; z-index: 2; flex-shrink: 0; background: #fff; border-radius: 6px 6px 0 0; }
 
 /* Progress: the TDS progress indicator look (blueberry on light blue). */
 .progress { height: 8px; margin: 4px 20px 0; border-radius: 999px; background: var(--blue-soft); overflow: hidden; }
@@ -479,6 +482,7 @@ body.panel-hidden .panel-inner { display: none; }
   body.panel-hidden .quote-panel { width: 100vw; border-left: 1px solid var(--line); box-shadow: none; }
   body.panel-hidden .panel-inner { display: flex; }
   .panel-inner { border-radius: 0; overscroll-behavior: contain; }
+  .panel-top { border-radius: 0; }
   .panel-tab { display: none; }
   /* Drawer header look (.tds-drawer__header): light background, rule underneath. */
   .panel-head { background: #fbfbfb; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 8px; }
