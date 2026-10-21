@@ -57,7 +57,6 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
 
   let servedConfig = null; // the endpoint's config as Cognigy served it, for this call
   let routesLeft = []; // routes not tried yet for this call
-  let attempt = 0; // events from an earlier attempt's client are ignored
   let clientKey = null; // user id and route of the client we have
   let configBlobUrl = null;
   async function ensure(userId, route) {
@@ -82,8 +81,12 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
     });
 
     clientKey = key;
-    const thisAttempt = attempt;
-    const current = () => thisAttempt === attempt;
+    // Events count only from the client the page is using now. A client replaced by a route retry (ensure destroys it)
+    // is ignored. The client is reused for every later call on the same route, so this must not be tied to one call:
+    // until 2026-10-21 it was tied to an attempt number, so from the second call on "answered" and "ended" were ignored,
+    // the page never knew the call was live, and Hang up did nothing (Odiche: chat, call, chat, call).
+    const self = client;
+    const current = () => client === self;
     client.on("connecting", () => { if (current()) onStatus("connecting"); });
     client.on("answered", async () => {
       if (!current()) return;
@@ -161,7 +164,6 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
 
   // One attempt on one route (null: the config exactly as served).
   async function dial(route) {
-    attempt += 1;
     const c = await ensure(identity.userId, route);
     onStatus("connecting");
     await c.connectAndCall();
@@ -189,8 +191,15 @@ export function createVoice({ config, identity, onMessage, onUi, onStatus, onEnd
         }
       }
     },
+    // Always asks the client to end the call, even if the page missed "answered": the customer must never be left on a call
+    // they can't hang up. Nothing live to end is not an error.
     async end() {
-      if (client && inCall) await client.endCall();
+      if (!client) return;
+      try {
+        await client.endCall();
+      } catch (err) {
+        debug("voice end: nothing to end", err);
+      }
     },
     async toggleMute() {
       if (!client || !inCall) return muted;
