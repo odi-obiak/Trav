@@ -1,5 +1,6 @@
-// Page-side quote state. The flow is the source of truth; this mirrors what it sends in `aisa_ui`. The page never
-// writes quote data (the panel is read-only).
+// Page-side quote state. The flow is the source of truth; this mirrors what it sends in `aisa_ui`. The page never writes
+// quote data itself: an edit or removal on the panel is sent to the flow, which checks and saves it and sends the result
+// back here like any other update.
 import { DEFAULT_CATALOG, readCatalog, stepIdForKey } from "./catalog.js";
 
 // Where a value came from (customer, extracted, prefilled, derived). Wording comes from the catalog's sourceTags.
@@ -7,6 +8,17 @@ import { DEFAULT_CATALOG, readCatalog, stepIdForKey } from "./catalog.js";
 const SOURCE_IDS = ["customer", "extracted", "decoded", "prefilled", "derived"];
 
 const STATUSES = ["collecting", "quote_ready", "rating", "advisor_requested"];
+
+// The edit data comes from the flow, but the page still only keeps shapes it knows how to draw.
+const QUOTE_PATH = /^[a-z_]+(\.[a-z0-9_]+){1,3}$/;
+const ENTITY_PATH = /^(vehicles|drivers|losses)\.\d+$/;
+const EDIT_TYPES = ["text", "bool", "options", "multi"];
+function readEdit(edit) {
+  if (!edit || typeof edit !== "object" || !EDIT_TYPES.includes(edit.type)) return null;
+  if (edit.type !== "options" && edit.type !== "multi") return { type: edit.type };
+  const options = Array.isArray(edit.options) ? edit.options.filter((o) => typeof o === "string").slice(0, 120) : [];
+  return options.length ? { type: edit.type, options } : { type: "text" };
+}
 
 export function createStore() {
   let state = {
@@ -59,6 +71,11 @@ export function createStore() {
           source: SOURCE_IDS.includes(f.source) ? f.source : "customer",
           section: stepIds.includes(f.section) ? f.section : stepIdForKey(catalog, f.key),
           confirmed: f.confirmed,
+          // For editing and removing on the panel (2026-10-20): where the answer lives in the quote, how it can be edited,
+          // and the vehicle, driver or incident it belongs to. Missing on a row that can't be changed.
+          path: QUOTE_PATH.test(f.path) ? f.path : null,
+          edit: readEdit(f.edit),
+          entity: ENTITY_PATH.test(f.entity) ? f.entity : null,
         });
       }
       const focus = ui.focus && typeof ui.focus === "object" && stepIds.includes(ui.focus.section)

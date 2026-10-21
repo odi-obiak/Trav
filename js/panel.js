@@ -12,11 +12,13 @@ export function isAllowedXapp(url, suffixes) {
   }
 }
 
-// The "Your quote" panel: a read-only view of what AISA has stored, one step at a time, filled live from aisa_ui.
-// Travelers doesn't want a form experience (2026-10-01): answers only come from the conversation (chat or voice).
-// The panel is for reviewing and confirming. "These are correct" and "Something's not right" send an ordinary
-// customer message to AISA, so the conversation, its guardrails and the validator stay the only way data changes.
-export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onView }) {
+// The "Your quote" panel: what AISA has stored, one step at a time, filled live from aisa_ui.
+// It started read-only (2026-10-01: Travelers doesn't want a form experience). Since 2026-10-20 (Odiche) the customer can
+// also change an answer (the pencil on a row) or remove a vehicle, driver or incident (the bin on its heading). The panel
+// never changes its own data for that: it sends the change to the flow (onEdit, onRemove), which checks it like a typed
+// answer, saves it and sends the result back. Until then the row shows "Saving…". Nothing is asked up front, so it is
+// still not a form: answers come from the conversation, and the panel is for checking and fixing them.
+export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onView, onEdit, onRemove }) {
   const body = root.querySelector("[data-panel-body]");
   const stepLabel = root.querySelector("[data-step-label]");
   const bar = root.querySelector("[data-progress]");
@@ -92,14 +94,160 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   // Answers that just arrived or changed stay highlighted for a few seconds, so the customer can check them.
   const recent = new Map(); // key -> time it changed
   let lastSigs = null;
+
+  // ---- Changing and removing answers (2026-10-20)
+  // editing: the row open for editing, with what the customer has typed so far. The panel is redrawn whenever the flow
+  // sends an update (and when a highlight fades), so the draft lives here, not in the input, or it would be lost.
+  let editing = null; // { key, draft, error }
+  let confirming = null; // the vehicle, driver or incident path waiting for "Remove" or "Keep it"
+  // What each vehicle, driver or incident is called on the panel ("2019 Honda Civic"), so the customer's bubble can say
+  // which one they changed. Filled as the steps are drawn.
+  const entityNames = new Map();
+  const whereOf = (f) => (f.entity && entityNames.get(f.entity)) || null;
+  // Sent to the flow and not answered yet: row key or entity path -> when. The flow's next update clears it (the value
+  // changes, or the row goes); if the flow refused the change, AISA says so in the conversation and the row goes back to
+  // normal after PENDING_MS.
+  const pending = new Map();
+  const PENDING_MS = 12000;
+  const isPending = (id) => pending.has(id) && Date.now() - pending.get(id) < PENDING_MS;
+  function markPending(id) {
+    pending.set(id, Date.now());
+    setTimeout(() => state && render(state), PENDING_MS + 50);
+  }
+  // Changes are only sent while the conversation is live (chat or a call), and not after a handover: the quote is with an
+  // advisor then, and the flow would ignore them anyway.
+  const canChange = () => (state.channel === "chat" || state.channel === "voice") && state.status !== "advisor_requested";
+
+  function startEdit(f) {
+    editing = { key: f.key, draft: f.edit.type === "multi" ? f.value.split(", ").filter(Boolean) : f.value, error: "" };
+    confirming = null;
+    byCustomer = true;
+    render(state);
+  }
+  function stopEdit(f) {
+    editing = null;
+    render(state);
+    body.querySelector(`[data-edit-for="${CSS.escape(f.key)}"]`)?.focus();
+  }
+  // The value to send, as the flow stores it: true or false for yes/no, the options joined for "pick several", trimmed
+  // text otherwise. Returns null (and says why) when there is nothing to send.
+  function valueToSend(f) {
+    const draft = editing.draft;
+    if (f.edit.type === "bool") return draft === "Yes" ? true : draft === "No" ? false : null;
+    if (f.edit.type === "multi") {
+      if (!draft.length) { editing.error = "Pick at least one, or remove this answer."; return null; }
+      return draft.join(", ");
+    }
+    const text = String(draft).replace(/\s+/g, " ").trim();
+    if (!text) { editing.error = "Type the new answer, or remove this answer."; return null; }
+    return text;
+  }
+  function saveEdit(f) {
+    const value = valueToSend(f);
+    if (value === null) return render(state);
+    const shown = value === true ? "Yes" : value === false ? "No" : value;
+    if (shown === f.value) return stopEdit(f); // nothing changed, so nothing to send
+    markPending(f.key);
+    stopEdit(f);
+    onEdit?.({ field: f, value, shown, where: whereOf(f) });
+  }
+  function removeAnswer(f) {
+    markPending(f.key);
+    stopEdit(f);
+    const where = whereOf(f);
+    onRemove?.({ path: f.path, name: where ? `the ${labelOf(f)} for the ${where}` : `the answer for ${labelOf(f)}`, keys: [f.key] });
+  }
+
+  // The editor that replaces a row's value: the right control for the answer, then Save, Cancel and Remove.
+  function editor(f) {
+    const id = `edit-${f.key.replace(/[^a-z0-9]/gi, "-")}`;
+    const label = labelOf(f);
+    let control;
+    if (f.edit.type === "multi") {
+      control = el("fieldset", { class: "edit-checks", id, "aria-label": label },
+        ...f.edit.options.map((option) => {
+          const box = el("input", { type: "checkbox", value: option, checked: editing.draft.includes(option) });
+          box.addEventListener("change", () => {
+            editing.draft = f.edit.options.filter((o) => (o === option ? box.checked : editing.draft.includes(o)));
+          });
+          return el("label", {}, box, " ", option);
+        }));
+    } else if (f.edit.type === "bool" || f.edit.type === "options") {
+      const options = f.edit.type === "bool" ? ["Yes", "No"] : f.edit.options.slice();
+      // A value the list doesn't have (an older answer) stays selectable, so opening the editor never changes it quietly.
+      if (f.value && !options.includes(f.value)) options.unshift(f.value);
+      control = el("select", { id, "aria-label": `New answer for ${label}` },
+        ...options.map((option) => el("option", { value: option, selected: option === editing.draft }, option)));
+      control.addEventListener("change", () => { editing.draft = control.value; });
+    } else {
+      control = el("input", { type: "text", id, maxlength: "200", autocomplete: "off", "aria-label": `New answer for ${label}` });
+      control.value = editing.draft;
+      control.addEventListener("input", () => { editing.draft = control.value; editing.error = ""; });
+    }
+    const save = el("button", { class: "tds-button--primary tds-button--small", type: "submit" }, "Save");
+    const cancel = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button" }, "Cancel");
+    const remove = el("button", { class: "tds-button--tertiary tds-button--small link-btn remove-link", type: "button" }, "Remove answer");
+    cancel.addEventListener("click", () => stopEdit(f));
+    remove.addEventListener("click", () => removeAnswer(f));
+    const errorId = `${id}-error`;
+    const error = editing.error ? el("p", { class: "edit-error", id: errorId, role: "alert" }, editing.error) : null;
+    if (error) control.setAttribute("aria-describedby", errorId);
+    const form = el("form", { class: "row-editor", "data-editor": f.key, novalidate: true },
+      control, error, el("div", { class: "edit-actions" }, save, cancel, remove));
+    form.addEventListener("submit", (e) => { e.preventDefault(); saveEdit(f); });
+    // Escape cancels the edit only; it mustn't also close the quote drawer on a phone (app.js listens on the document).
+    form.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); stopEdit(f); } });
+    return form;
+  }
+
   function row(f) {
     const at = recent.get(f.key);
     const age = at ? Date.now() - at : Infinity;
     const fresh = age < RECENT_MS;
+    const label = labelOf(f);
+    const changeable = canChange() && !!f.edit && !!f.path;
+    const open = changeable && editing && editing.key === f.key;
+    const saving = isPending(f.key);
+    let action = null;
+    if (changeable && !open) {
+      // aria-disabled rather than disabled while saving, so focus can stay on it after Save.
+      action = el("button", { class: "row-action", type: "button", "data-edit-for": f.key, "aria-label": `Change ${label}`, title: `Change ${label}`, "aria-disabled": saving ? "true" : undefined },
+        icon("pencil-18"));
+      action.addEventListener("click", () => { if (!isPending(f.key)) startEdit(f); });
+    }
     // A negative delay resumes the fade where it was, so re-rendering doesn't restart it.
-    return el("div", { class: `review-row${fresh ? " row-updated" : ""}`, "data-row": f.key, style: fresh ? `animation-delay:-${age}ms` : undefined },
-      el("dt", {}, labelOf(f), fresh ? el("span", { class: "updated-mark", style: `animation-delay:-${age}ms` }, "Updated") : null),
-      el("dd", {}, f.value, sourceTag(f)));
+    return el("div", { class: `review-row${fresh ? " row-updated" : ""}${changeable ? " is-changeable" : ""}${open ? " is-editing" : ""}`, "data-row": f.key, style: fresh ? `animation-delay:-${age}ms` : undefined },
+      el("dt", {}, label, fresh ? el("span", { class: "updated-mark", style: `animation-delay:-${age}ms` }, "Updated") : null),
+      // The pencil sits inside the dd: a dl row may only hold dt and dd, or screen readers lose the list.
+      open ? el("dd", {}, editor(f))
+        : el("dd", {}, el("span", { class: "row-value" }, f.value, sourceTag(f), saving ? el("span", { class: "saving-note", role: "status" }, "Saving…") : null), action));
+  }
+
+  // The heading of one vehicle, driver or incident, with its bin. Removing asks first, in place: a whole car is a lot to
+  // lose to a stray tap. Driver 0 is the customer and comes without an entity, so it has no bin.
+  function entityHeading(name, entityPath) {
+    const heading = el("h4", { class: "entity-heading" }, el("span", {}, name));
+    if (!entityPath || !canChange()) return [heading];
+    const removing = isPending(entityPath);
+    const bin = el("button", { class: "row-action", type: "button", "data-remove-for": entityPath, "aria-label": `Remove the ${name}`, title: `Remove the ${name}`, disabled: removing },
+      icon("trash-18"));
+    bin.addEventListener("click", () => { confirming = entityPath; editing = null; byCustomer = true; render(state); body.querySelector("[data-keep]")?.focus(); });
+    heading.append(removing ? el("span", { class: "saving-note", role: "status" }, "Removing…") : bin);
+    if (confirming !== entityPath) return [heading];
+    const yes = el("button", { class: "tds-button--primary tds-button--small", type: "button" }, "Remove");
+    const keep = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button", "data-keep": "" }, "Keep it");
+    yes.addEventListener("click", () => {
+      confirming = null;
+      markPending(entityPath);
+      render(state);
+      const keys = [...state.fields.values()].filter((f) => f.entity === entityPath).map((f) => f.key);
+      onRemove?.({ path: entityPath, name: `the ${name}`, keys });
+    });
+    keep.addEventListener("click", () => { confirming = null; render(state); body.querySelector(`[data-remove-for="${CSS.escape(entityPath)}"]`)?.focus(); });
+    const ask = el("div", { class: "remove-confirm", role: "group", "aria-label": `Remove the ${name}?` },
+      el("p", {}, `Remove the ${name} from your quote?`), el("div", { class: "edit-actions" }, yes, keep));
+    ask.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); keep.click(); } });
+    return [heading, ask];
   }
 
   // Which answers are new or changed since the last update from the flow (value, source or confirmation). A channel
@@ -107,6 +255,13 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   function trackChanges(fields) {
     const sigs = new Map([...fields.values()].filter((f) => f.value).map((f) => [f.key, `${f.value}|${f.source}|${f.confirmed}`]));
     const changed = lastSigs ? [...sigs.keys()].filter((k) => lastSigs.get(k) !== sigs.get(k)) : [];
+    // The flow has answered a change we sent: the row changed or went. (A refused change leaves the row as it was; it
+    // stops showing "Saving…" after PENDING_MS, and AISA says why in the conversation.)
+    for (const k of changed) pending.delete(k);
+    for (const k of [...pending.keys()]) {
+      if (/^(vehicles|drivers|losses)\.\d+$/.test(k) ? ![...fields.values()].some((f) => f.entity === k) : !sigs.has(k)) pending.delete(k);
+    }
+    if (editing && !sigs.has(editing.key)) editing = null; // the row being edited was removed (by AISA, or another channel)
     lastSigs = sigs;
     const now = Date.now();
     for (const k of changed) recent.set(k, now);
@@ -150,7 +305,9 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       for (const [i, list] of groups) {
         const v = (name) => list.find((f) => f.key.endsWith(`.${name}`))?.value || "";
         const name = entityName(step.entity, v) || `${cap(step.entity.noun)} ${i + 1}`;
-        card.append(el("h4", {}, name), el("dl", { class: "review-list" }, ...list.map(row)));
+        const entityPath = list.find((f) => f.entity)?.entity || null;
+        if (entityPath) entityNames.set(entityPath, name);
+        card.append(...entityHeading(name, entityPath), el("dl", { class: "review-list" }, ...list.map(row)));
       }
     } else {
       card.append(el("dl", { class: "review-list" }, ...rows.map(row)));
@@ -311,14 +468,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     }
     // Back on the left, Next on the right, always in the same place (an empty slot keeps the other one put).
     const nav = el("div", { class: "step-nav" });
-    const chevron = (id) => {
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("aria-hidden", "true");
-      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-      use.setAttribute("href", `#${id}`);
-      svg.append(use);
-      return svg;
-    };
+    const chevron = icon;
     if (index > 0) {
       const back = el("button", { class: "tds-button--tertiary tds-button--small link-btn", type: "button", title: "Previous step" }, chevron("chevron-left-18"), "Back");
       back.addEventListener("click", () => go(-1));
@@ -330,7 +480,24 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       nav.append(fwd);
     } else nav.append(el("span", { "aria-hidden": "true" }));
     footer.append(nav);
+    // A redraw while the customer is typing in the editor keeps them in it, with the cursor where it was.
+    // Only when focus was in the panel: an update that lands while they type in the chat box mustn't pull them away.
+    const active = document.activeElement;
+    const focusWasInPanel = body.contains(active);
+    const typingIn = active && active.closest && active.closest("[data-editor]") ? active : null;
+    const caret = typingIn && typeof typingIn.selectionStart === "number" ? typingIn.selectionStart : null;
+    // A pencil or bin that had focus gets it back on the redrawn panel (keyboard users would otherwise be sent to the top).
+    const focusedAction = focusWasInPanel && active.dataset ? (active.dataset.editFor ? `[data-edit-for="${CSS.escape(active.dataset.editFor)}"]`
+      : active.dataset.removeFor ? `[data-remove-for="${CSS.escape(active.dataset.removeFor)}"]` : null) : null;
     body.replaceChildren(built.node, footer);
+    if (focusedAction) body.querySelector(focusedAction)?.focus();
+    if (editing) {
+      const control = body.querySelector(`[data-editor="${CSS.escape(editing.key)}"] input, [data-editor="${CSS.escape(editing.key)}"] select`);
+      if (control && focusWasInPanel) {
+        control.focus();
+        if (caret !== null && typeof control.setSelectionRange === "function") control.setSelectionRange(caret, caret);
+      }
+    }
     onView?.({ step: step.id, xapp: !!showXapp, advisor: showAdvisor }, byCustomer);
     byCustomer = false;
     if (scrollTo) {
@@ -423,4 +590,14 @@ function renderAdvisorCard(container, record, fallbackText, reasons) {
 
 function cap(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// An icon from the page's SVG sprite (index.html), hidden from screen readers: the button around it has the label.
+function icon(id) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", `#${id}`);
+  svg.append(use);
+  return svg;
 }

@@ -135,3 +135,22 @@ export const PREVIEW_SCRIPT = [
     bot: "Of course. A licensed advisor can help with that. I've shared everything so far, so you won't need to repeat anything.",
   },
 ];
+
+// The flow sends each row's quote path, how it can be edited and which vehicle, driver or incident it is in (build_ui.js,
+// 2026-10-20). The sample rows above don't spell that out, so it's filled in here the way the flow would.
+const PREVIEW_LISTS = {
+  body_style: ["Coupe", "Sedan", "SUV", "Wagon", "Convertible", "Minivan", "Pickup", "Van"],
+  relationship_to_named_insured: ["Spouse", "Child", "Relative", "Domestic Partner", "Employee", "Parent", "Other"],
+  ownership: ["Owned", "Financed", "Leased"],
+};
+for (const step of PREVIEW_SCRIPT) {
+  for (const field of (step.ui && step.ui.fields) || []) {
+    const entity = field.key.match(/^(vehicle|driver|loss)\[(\d+)\]\.(\w+)$/);
+    const collection = entity ? { vehicle: "vehicles", driver: "drivers", loss: "losses" }[entity[1]] : null;
+    field.path = entity ? `${collection}.${entity[2]}.${entity[3]}` : field.key;
+    if (entity && !(collection === "drivers" && entity[2] === "0")) field.entity = `${collection}.${entity[2]}`;
+    const leaf = field.key.split(".").pop();
+    field.edit = PREVIEW_LISTS[leaf] ? { type: "options", options: PREVIEW_LISTS[leaf] }
+      : field.value === "Yes" || field.value === "No" ? { type: "bool" } : { type: "text" };
+  }
+}

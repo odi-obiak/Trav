@@ -368,10 +368,16 @@ function followAttach(state) {
 }
 
 // ---- Panel
-// Read-only review panel (no form, per Travelers). Its buttons send ordinary customer messages, so AISA's tools
-// record the confirmation or ask what to change; nothing on the page writes quote data.
+// The review panel. Nothing on the page writes quote data: its buttons send events the flow applies in code (a step's
+// "These are correct", an edited answer, a removed vehicle, driver or incident), or a sentence for AISA where the agent
+// has to respond to it. The flow checks and saves the change and sends the panel the result.
 // The topic word for each step ("my vehicle details") comes from the flow's catalog (rules.panel.steps[].topic).
 const topic = (step) => step.topic || "quote";
+
+// ?preview=1 has no flow to answer an edit, so it answers like the flow would, to show the round trip on the page.
+function previewAnswer(ui) {
+  if (isPreview) setTimeout(() => store.applyUi(ui), 600);
+}
 const panel = createPanel($("[data-panel]"), {
   config: CONFIG,
   // "Everything looks right" stays a sentence: confirming the whole quote is the agent's confirm_quote step. A step's
@@ -380,6 +386,16 @@ const panel = createPanel($("[data-panel]"), {
     ? sendText("Yes, everything in my quote looks right.")
     : sendEvent(`Yes, my ${topic(step)} details are correct.`, { aisa_event: { type: "confirm_section", section: step.id, quoteId } }),
   onCorrect: ({ step }) => sendText(`I need to correct something in my ${topic(step)} details.`),
+  // The pencil and the bin (2026-10-20). The bubble says what the customer did, in words; the flow gets only data
+  // (router_events.js panel_edit / panel_remove), so nothing they type there reaches the model as an instruction.
+  onEdit: ({ field, value, shown, where }) => {
+    sendEvent(`Change ${where ? `the ${field.label} for the ${where}` : field.label} to ${shown}.`, { aisa_event: { type: "panel_edit", path: field.path, value, quoteId } });
+    previewAnswer({ fields: [{ ...field, value: shown, source: "customer", confirmed: true }] });
+  },
+  onRemove: ({ path, name, keys }) => {
+    sendEvent(`Remove ${name}.`, { aisa_event: { type: "panel_remove", path, quoteId } });
+    previewAnswer({ removeKeys: keys });
+  },
   onPerson: talkToPerson,
   onView: ({ step, xapp, advisor }, byCustomer) => {
     const cards = [];

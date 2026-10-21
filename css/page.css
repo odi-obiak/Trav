@@ -13,6 +13,7 @@
   --navy-l5: rgb(242, 245, 247);      /* c-accent-blueberry-light5 */
   --blue: rgb(0, 115, 149);           /* c-icon-in-blue / tertiary button text */
   --blue-soft: rgb(204, 233, 251);    /* tertiary hover bg / progress track */
+  --blue-faint: rgb(233, 244, 251);   /* the round edit and remove buttons on the quote panel (wireframe) */
   --ink: rgb(39, 42, 45);             /* c-text */
   --muted: rgb(107, 109, 113);        /* c-neutral-light1 */
   --line: rgb(218, 219, 219);         /* c-neutral-light4 */
@@ -347,7 +348,38 @@ body.voice-connecting .call-status::before {
 .review-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 8px; padding: 8px 8px; margin: 0 -8px; font-size: 0.875rem; border-bottom: 1px solid var(--line-soft); }
 .review-row:last-child { border-bottom: 0; }
 .review-row dt { color: var(--muted); }
-.review-row dd { margin: 0; font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.review-row dd { margin: 0; font-weight: 600; display: flex; gap: 6px; align-items: flex-start; }
+.review-row .row-value { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; min-height: 24px; overflow-wrap: anywhere; }
+
+/* Changing and removing answers on the panel (2026-10-20): a round pencil on each answer, a bin on each vehicle, driver
+   or incident heading, as in Travelers' wireframe. The editor replaces the value in place. */
+.row-action {
+  flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; margin: -4px 0 -4px auto;
+  background: var(--blue-faint); border: 0; border-radius: 50%; color: var(--navy); cursor: pointer;
+}
+.row-action svg { width: 16px; height: 16px; }
+.row-action:hover { background: var(--blue-soft); }
+.row-action:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.row-action[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.review-row.is-editing { grid-template-columns: minmax(0, 1fr); gap: 6px; background: var(--bg-soft); border-radius: 4px; }
+.row-editor { display: grid; gap: 8px; width: 100%; font-weight: 400; }
+.row-editor input[type="text"], .row-editor select {
+  width: 100%; min-height: 40px; padding: 8px 10px; font: inherit; color: var(--ink); background: #fff;
+  border: 1px solid var(--line); border-radius: 4px;
+}
+.row-editor input[type="text"]:focus-visible, .row-editor select:focus-visible, .edit-checks input:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.edit-checks { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.edit-checks label { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; cursor: pointer; }
+.edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.edit-actions .remove-link { margin-left: auto; color: var(--red-dark); }
+.edit-error { margin: 0; font-size: 0.8125rem; color: var(--red-dark); }
+.saving-note { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.entity-heading { display: flex; align-items: center; gap: 8px; }
+.entity-heading > span:first-child { flex: 1 1 auto; min-width: 0; }
+.entity-heading .row-action, .entity-heading .saving-note { margin-left: auto; }
+.remove-confirm { margin: 4px 0 8px; padding: 10px 12px; background: var(--red-soft); border-radius: 4px; }
+.remove-confirm p { margin: 0 0 8px; font-size: 0.875rem; }
+@media (max-width: 600px) { .row-action { width: 40px; height: 40px; margin: -8px 0 -8px auto; } }
 .muted { color: var(--muted); font-size: 0.875rem; margin: 0; }
 .review-card > .muted { padding: 12px; background: var(--bg-soft); border-radius: 4px; }
 
