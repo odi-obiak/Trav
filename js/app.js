@@ -78,7 +78,7 @@ function allowUploads() {
   if (note) note.hidden = false;
 }
 function fromAisa(m) {
-  if (m && m.from === "bot") allowUploads();
+  if (m && m.from === "bot") { allowUploads(); showConnecting(false); }
   transcript.add(m);
 }
 
@@ -207,6 +207,50 @@ const voice = createVoice({
   },
 });
 
+// ---- Entry (2026-10-22, Dylan's TIDAS handoff): product and ZIP, then the card with three ways in.
+// DEMO SHORTCUT: the ZIP stays on the page. It isn't sent to Cognigy, so AISA still asks the full address; production would
+// pass it with the entry and save it as the customer's answer.
+let entryZip = "";
+$("[data-start-form]").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const zipInput = $("[data-start-zip]");
+  const zip = zipInput.value.replace(/\D/g, "");
+  const ok = /^\d{5}$/.test(zip);
+  $("[data-zip-field]").classList.toggle("tds-field--error", !ok);
+  $("[data-zip-error]").hidden = ok;
+  zipInput.setAttribute("aria-invalid", String(!ok));
+  if (!ok) return zipInput.focus();
+  entryZip = zip;
+  $('[data-entry="start"]').hidden = true;
+  $('[data-entry="help"]').hidden = false;
+  $("#help-title").focus({ preventScroll: true });
+});
+// "Fill out the quote yourself" is a placeholder for now: there's no form. It says so, and points to the panel, where any
+// answer can be filled in or changed once the conversation has started.
+$('[data-action="fill-yourself"]').addEventListener("click", () => { $("[data-self-note]").hidden = false; });
+
+// Connecting: after Speak or Chat, until AISA's first message (or a failure). A fallback hides it, so it never sticks.
+let connectingTimer = null;
+function showConnecting(on) {
+  $("[data-connecting]").hidden = !on;
+  clearTimeout(connectingTimer);
+  if (on) connectingTimer = setTimeout(() => showConnecting(false), 25000);
+}
+
+// The header menu (the ellipsis): Escape or a click elsewhere closes it, and focus goes back to the button.
+const menuBtn = $('[data-action="toggle-menu"]');
+const menuList = $("#header-menu-list");
+function setMenu(open, refocus) {
+  menuList.hidden = !open;
+  menuBtn.setAttribute("aria-expanded", String(open));
+  if (open) menuList.querySelector("a")?.focus();
+  else if (refocus) menuBtn.focus();
+}
+menuBtn.addEventListener("click", () => setMenu(menuList.hidden));
+document.addEventListener("click", (e) => { if (!menuList.hidden && !e.target.closest("[data-header-menu]")) setMenu(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !menuList.hidden) { e.stopPropagation(); setMenu(false, true); } }, true);
+$("[data-menu-person]").addEventListener("click", (e) => { e.preventDefault(); setMenu(false); });
+
 // ---- Channel actions
 function enterConversation() {
   document.body.classList.add("in-conversation");
@@ -214,12 +258,14 @@ function enterConversation() {
 }
 
 async function startChat(intent) {
+  if (!document.body.classList.contains("in-conversation") && !isPreview) showConnecting(true);
   enterConversation();
   store.set({ channel: "chat" });
   if (isPreview) return;
   try {
     await chat.start(intent ? { ...entry, intent } : entry);
   } catch (err) {
+    showConnecting(false);
     debug("chat failed", err);
     say("AISA couldn't connect. Please try again in a moment.");
   }
@@ -228,6 +274,7 @@ async function startChat(intent) {
 let pendingSwitchFromChat = false;
 let callWasLive = false; // set when the call is answered; a call that fails before that never "returns" to chat
 async function startVoice(fromChat) {
+  if (!fromChat && !document.body.classList.contains("in-conversation") && !isPreview) showConnecting(true);
   enterConversation();
   if (isPreview) {
     store.set({ channel: "voice" });
@@ -247,6 +294,7 @@ async function startVoice(fromChat) {
     // Step 7: the chat's state and last turns are in the Contact Profile; the entry only says where the call came from.
     await voice.start({ ...entry, switchedFrom: fromChat ? "chat" : null });
   } catch (err) {
+    showConnecting(false);
     stopClock();
     pendingSwitchFromChat = false;
     document.body.classList.remove("voice-connecting");
@@ -389,7 +437,8 @@ const panel = createPanel($("[data-panel]"), {
   // The pencil and the bin (2026-10-20). The bubble says what the customer did, in words; the flow gets only data
   // (router_events.js panel_edit / panel_remove), so nothing they type there reaches the model as an instruction.
   onEdit: ({ field, value, shown, where }) => {
-    sendEvent(`Change ${where ? `the ${field.label} for the ${where}` : field.label} to ${shown}.`, { aisa_event: { type: "panel_edit", path: field.path, value, quoteId } });
+    const what = where ? `the ${field.label} for the ${where}` : field.label;
+    sendEvent(field.open ? `${what.charAt(0).toUpperCase()}${what.slice(1)}${/\?$/.test(what) ? "" : ":"} ${shown}.` : `Change ${what} to ${shown}.`, { aisa_event: { type: "panel_edit", path: field.path, value, quoteId } });
     previewAnswer({ fields: [{ ...field, value: shown, source: "customer", confirmed: true }] });
   },
   onRemove: ({ path, name, keys }) => {
@@ -680,7 +729,8 @@ store.subscribe((state) => {
 setChip("chat", CONFIG.webchatConfigUrl ? "ready" : "off");
 setChip("voice", CONFIG.voiceEndpointUrl ? "ready" : "off");
 $("[data-quote-id]").textContent = quoteId;
-$("[data-demo-bar]").hidden = !isDebug; // the demo notice and session timer are for us, not the customer or the recording
+$("[data-demo-bar]").hidden = !isDebug;
+document.querySelectorAll("[data-debug-only]").forEach((node) => { node.hidden = !isDebug; }); // connection chips, quote id // the demo notice and session timer are for us, not the customer or the recording
 
 // ---- Preview: plays a scripted conversation (placeholder data) so the layout can be reviewed without Cognigy.
 function voice_previewEnd() {

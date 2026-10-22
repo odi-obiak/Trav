@@ -133,13 +133,17 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
   // text otherwise. Returns null (and says why) when there is nothing to send.
   function valueToSend(f) {
     const draft = editing.draft;
-    if (f.edit.type === "bool") return draft === "Yes" ? true : draft === "No" ? false : null;
+    if (f.edit.type === "bool" || f.edit.type === "options") {
+      if (!draft) { editing.error = "Pick an answer."; return null; }
+      if (f.edit.type === "bool") return draft === "Yes";
+      return draft;
+    }
     if (f.edit.type === "multi") {
-      if (!draft.length) { editing.error = "Pick at least one, or remove this answer."; return null; }
+      if (!draft.length) { editing.error = f.open ? "Pick at least one." : "Pick at least one, or remove this answer."; return null; }
       return draft.join(", ");
     }
     const text = String(draft).replace(/\s+/g, " ").trim();
-    if (!text) { editing.error = "Type the new answer, or remove this answer."; return null; }
+    if (!text) { editing.error = f.open ? "Type your answer." : "Type the new answer, or remove this answer."; return null; }
     return text;
   }
   function saveEdit(f) {
@@ -176,11 +180,12 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
       const options = f.edit.type === "bool" ? ["Yes", "No"] : f.edit.options.slice();
       // A value the list doesn't have (an older answer) stays selectable, so opening the editor never changes it quietly.
       if (f.value && !options.includes(f.value)) options.unshift(f.value);
-      control = el("select", { id, "aria-label": `New answer for ${label}` },
+      control = el("select", { id, "aria-label": `${f.open ? "Answer" : "New answer"} for ${label}` },
+        ...(editing.draft ? [] : [el("option", { value: "", selected: true }, "Choose an answer")]),
         ...options.map((option) => el("option", { value: option, selected: option === editing.draft }, option)));
       control.addEventListener("change", () => { editing.draft = control.value; });
     } else {
-      control = el("input", { type: "text", id, maxlength: "200", autocomplete: "off", "aria-label": `New answer for ${label}` });
+      control = el("input", { type: "text", id, maxlength: "200", autocomplete: "off", "aria-label": `${f.open ? "Answer" : "New answer"} for ${label}` });
       control.value = editing.draft;
       control.addEventListener("input", () => { editing.draft = control.value; editing.error = ""; });
     }
@@ -193,7 +198,7 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     const error = editing.error ? el("p", { class: "edit-error", id: errorId, role: "alert" }, editing.error) : null;
     if (error) control.setAttribute("aria-describedby", errorId);
     const form = el("form", { class: "row-editor", "data-editor": f.key, novalidate: true },
-      control, error, el("div", { class: "edit-actions" }, save, cancel, remove));
+      control, error, el("div", { class: "edit-actions" }, save, cancel, f.open ? null : remove));
     form.addEventListener("submit", (e) => { e.preventDefault(); saveEdit(f); });
     // Escape cancels the edit only; it mustn't also close the quote drawer on a phone (app.js listens on the document).
     form.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); stopEdit(f); } });
@@ -211,16 +216,18 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     let action = null;
     if (changeable && !open) {
       // aria-disabled rather than disabled while saving, so focus can stay on it after Save.
-      action = el("button", { class: "row-action", type: "button", "data-edit-for": f.key, "aria-label": `Change ${label}`, title: `Change ${label}`, "aria-disabled": saving ? "true" : undefined },
+      const verb = f.open ? "Fill in" : "Change";
+      action = el("button", { class: "row-action", type: "button", "data-edit-for": f.key, "aria-label": `${verb} ${label}`, title: `${verb} ${label}`, "aria-disabled": saving ? "true" : undefined },
         icon("pencil-18"));
       action.addEventListener("click", () => { if (!isPending(f.key)) startEdit(f); });
     }
     // A negative delay resumes the fade where it was, so re-rendering doesn't restart it.
-    return el("div", { class: `review-row${fresh ? " row-updated" : ""}${changeable ? " is-changeable" : ""}${open ? " is-editing" : ""}`, "data-row": f.key, style: fresh ? `animation-delay:-${age}ms` : undefined },
+    return el("div", { class: `review-row${fresh ? " row-updated" : ""}${changeable ? " is-changeable" : ""}${open ? " is-editing" : ""}${f.open ? " is-open" : ""}`, "data-row": f.key, style: fresh ? `animation-delay:-${age}ms` : undefined },
       el("dt", {}, label, fresh ? el("span", { class: "updated-mark", style: `animation-delay:-${age}ms` }, "Updated") : null),
       // The pencil sits inside the dd: a dl row may only hold dt and dd, or screen readers lose the list.
       open ? el("dd", {}, editor(f))
-        : el("dd", {}, el("span", { class: "row-value" }, f.value, sourceTag(f), saving ? el("span", { class: "saving-note", role: "status" }, "Saving…") : null), action));
+        : el("dd", {}, el("span", { class: "row-value" }, f.open ? el("span", { class: "open-value" }, "Not answered yet") : f.value, f.open ? null : sourceTag(f),
+          saving ? el("span", { class: "saving-note", role: "status" }, "Saving…") : null), action));
   }
 
   // The heading of one vehicle, driver or incident, with its bin. Removing asks first, in place: a whole car is a lot to
@@ -259,9 +266,9 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
     // stops showing "Saving…" after PENDING_MS, and AISA says why in the conversation.)
     for (const k of changed) pending.delete(k);
     for (const k of [...pending.keys()]) {
-      if (/^(vehicles|drivers|losses)\.\d+$/.test(k) ? ![...fields.values()].some((f) => f.entity === k) : !sigs.has(k)) pending.delete(k);
+      if (/^(vehicles|drivers|losses)\.\d+$/.test(k) ? ![...fields.values()].some((f) => f.entity === k) : !fields.has(k)) pending.delete(k);
     }
-    if (editing && !sigs.has(editing.key)) editing = null; // the row being edited was removed (by AISA, or another channel)
+    if (editing && !fields.has(editing.key)) editing = null; // the row being edited was removed (by AISA, or another channel)
     lastSigs = sigs;
     const now = Date.now();
     for (const k of changed) recent.set(k, now);
@@ -278,15 +285,15 @@ export function createPanel(root, { config, onConfirm, onCorrect, onPerson, onVi
 
   // Values for one step: grouped by vehicle, driver or incident, then in the rules' order (the order AISA asks);
   // values that aren't questions (VIN, prefill extras) come last.
-  function stepFields(step) {
+  function stepFields(step, withOpen = false) {
     return [...state.fields.values()]
-      .filter((f) => f.section === step.id && f.value)
+      .filter((f) => f.section === step.id && (f.value || (withOpen && f.open && canChange())))
       .sort((a, b) => entityOf(a.key) - entityOf(b.key) || a.order - b.order);
   }
 
   function renderStep(step) {
     const card = el("div", { class: "form-card review-card" }, el("h3", {}, step.heading || step.title));
-    const rows = stepFields(step);
+    const rows = stepFields(step, true);
     if (!rows.length) {
       card.append(el("p", { class: "muted" }, "Nothing here yet. AISA fills this in as you talk."));
       return { node: card, rows };

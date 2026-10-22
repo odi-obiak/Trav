@@ -30,6 +30,9 @@
 <symbol id="trv-umbrella" viewBox="112 -1 36 32"><path d="M131.012 11.412v15.163A3.43 3.43 0 01127.586 30a3.43 3.43 0 01-3.254-2.354l-.002-.007a.928.928 0 01.894-1.178.93.93 0 01.882.632l.002.005a1.57 1.57 0 003.046-.523l-.002-15.191v-.004c0-.047.034-.084.08-.089h.007a7.963 7.963 0 011.689.015h.004a.089.089 0 01.079.088v.018zm-17.848-.143a.105.105 0 01-.153-.132l.005-.008C115.892 4.577 122.438 0 130.052 0c7.617 0 14.165 4.58 17.038 11.139l.002.007c.006.013.01.026.01.041a.105.105 0 01-.104.105.118.118 0 01-.05-.013l-.014-.005c-1.32-.778-3.162-1.26-5.201-1.26-2.354 0-4.446.643-5.773 1.64l-.006.005a.105.105 0 01-.128 0l-.005-.004c-1.33-.998-3.423-1.641-5.777-1.641-2.353 0-4.445.643-5.774 1.641l-.005.003a.107.107 0 01-.124.006l-.009-.008c-1.328-.998-3.423-1.642-5.777-1.642-2.03 0-3.863.477-5.18 1.248l-.011.007z" fill="#F50002"/></symbol>
 <!-- Not in the TDS sprite on this page; simple strokes drawn to match the TDS line weight (2026-10-14). -->
 <symbol id="paperclip-24" viewBox="0 0 24 24"><path d="M20.5 11.5l-8.1 8.1a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<!-- Entry (2026-10-22, Dylan's TIDAS handoff): the header menu's ellipsis and the "Speak" wave. -->
+<symbol id="dots-vertical-24" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></symbol>
+<symbol id="voice-wave-24" viewBox="0 0 24 24"><path d="M3 10v4M7 7v10M11 4v16M15 8v8M19 6v12M23 11v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 <symbol id="arrow-up-24" viewBox="0 0 24 24"><path d="M12 19V5m-6 6l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="chevron-left-18" viewBox="0 0 18 18"><path d="M11.5 3.5L6 9l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="chevron-right-18" viewBox="0 0 18 18"><path d="M6.5 3.5L12 9l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -57,13 +60,21 @@
       <span class="tds-global-header__identity">
         <svg class="tds-global-header__logo" aria-hidden="true"><use href="#trv-logo-2color-small"></use></svg>
         <span class="tds-sr-only">Travelers</span>
-        <span class="tds-global-header__product">Auto Quote Assistant</span>
       </span>
     </div>
-    <div class="header-actions">
-      <button class="tds-button--tertiary tds-button--small header-person" data-action="person" type="button">
-        <svg class="tds-button__icon--first" aria-hidden="true"><use href="#headset-1-18"></use></svg>Talk to an advisor
+    <!-- One action, the ellipsis, on every screen (Dylan's handoff): "Schedule Call with an Agent" asks AISA for a person
+         (the same aisa_action as before), and the phone number is text. Escape or clicking away closes it. -->
+    <div class="header-actions header-menu" data-header-menu>
+      <button class="header-menu__button" type="button" data-action="toggle-menu" aria-expanded="false" aria-controls="header-menu-list" aria-label="Help options" title="Help options">
+        <svg aria-hidden="true"><use href="#dots-vertical-24"></use></svg>
       </button>
+      <div class="header-menu__dropdown" id="header-menu-list" hidden>
+        <ul class="header-menu__list" role="list">
+          <li class="header-menu__item"><a class="header-menu__link" href="#" data-action="person" data-menu-person>Schedule Call with an Agent</a></li>
+          <!-- PLACEHOLDER: Travelers' number for the SLM recording. -->
+          <li class="header-menu__item header-menu__phone">Give us a call at 1-800-000-0000</li>
+        </ul>
+      </div>
     </div>
   </div>
 </header>
@@ -71,36 +82,57 @@
 <div class="app">
   <main class="conversation" data-conversation aria-label="Conversation with AISA">
 
-    <!-- Entry: shown until the customer picks how to start. -->
-    <section class="offer" data-offer aria-labelledby="offer-title">
-      <span class="tds-tag tds-tag--static tds-tag--mint offer-tag">Auto insurance quote</span>
-      <h1 id="offer-title" class="tds-h1">Get your auto quote by talking it through</h1>
-      <p class="tds-large lede">AISA, our AI assistant, walks you through it. Share your current auto docs to get your quote faster.</p>
-
-      <h2 class="tds-h4 choose-title">How would you like to start?</h2>
-      <ul class="start-options" role="list">
-        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option start-call" data-clickable="#start-voice">
-          <div class="tds-card__body">
-            <svg class="start-icon" aria-hidden="true"><use href="#microphone-1-24"></use></svg>
-            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-voice" data-action="start-voice" type="button">Talk with AISA</button>
-            <p class="tds-small start-sub">Speak with AISA right here in your browser using your microphone. There's no number to dial.</p>
+    <!-- Entry (2026-10-22, Dylan's TIDAS handoff): the product start (product and ZIP), then one card with three ways in.
+         The ZIP stays on the page for now: it isn't sent to Cognigy, so AISA still asks the full address. -->
+    <section class="offer" data-offer>
+      <div class="tds-card entry-card" data-entry="start" aria-labelledby="start-title">
+        <form class="tds-card__body entry-form" data-start-form novalidate>
+          <h1 id="start-title" class="tds-h2 entry-title">Find the right insurance for you</h1>
+          <div class="tds-field">
+            <label class="tds-field__label" for="start-product">Select a product</label>
+            <select class="tds-field__input" id="start-product" data-start-product>
+              <option value="auto" selected>Auto</option>
+            </select>
           </div>
-        </li>
-        <li class="tds-card tds-card--clickable tds-card--medium tds-card--level-5 start-option" data-clickable="#start-chat">
-          <div class="tds-card__body">
-            <svg class="start-icon" aria-hidden="true"><use href="#messages-1-24"></use></svg>
-            <button class="tds-h4 tds-card__body-header tds-card--clickable__button start-title" id="start-chat" data-action="start-chat" type="button">Chat with AISA</button>
-            <p class="tds-small start-sub">Type your answers at your own pace. You can switch to talking at any time.</p>
+          <div class="tds-field" data-zip-field>
+            <label class="tds-field__label" for="start-zip">ZIP code</label>
+            <input class="tds-field__input" id="start-zip" data-start-zip inputmode="numeric" autocomplete="postal-code" maxlength="5" aria-describedby="start-zip-error">
+            <p class="tds-field__message tds-field__message--error" id="start-zip-error" data-zip-error hidden>Enter a 5-digit ZIP code.</p>
           </div>
-        </li>
-      </ul>
+          <div><button class="tds-button--primary" type="submit">Start your quote</button></div>
+        </form>
+      </div>
 
-      <p class="connection" aria-label="Connection status">
+      <div class="tds-card entry-card entry-card--help" data-entry="help" aria-labelledby="help-title" hidden>
+        <div class="tds-card__body">
+          <h1 id="help-title" class="tds-h2 entry-title" tabindex="-1">Get help from our AI Sales Assistant</h1>
+          <p class="tds-large entry-lede">Our AI Sales Assistant asks about you, your vehicles and your drivers, and fills in your quote as you answer. You can speak or message with the assistant.</p>
+          <div class="entry-choices">
+            <button class="tds-button--primary entry-choice" id="start-voice" data-action="start-voice" type="button">
+              <svg class="tds-button__icon--first" aria-hidden="true"><use href="#voice-wave-24"></use></svg>Speak with our AI Sales Assistant
+            </button>
+            <button class="tds-button--secondary entry-choice" id="start-chat" data-action="start-chat" type="button">
+              <svg class="tds-button__icon--first" aria-hidden="true"><use href="#messages-1-24"></use></svg>Chat with our AI Sales Assistant
+            </button>
+            <!-- Placeholder for now (2026-10-22, Odiche): there is no form yet. -->
+            <button class="tds-button--tertiary entry-choice entry-choice--self" data-action="fill-yourself" type="button" aria-describedby="self-note">Fill out the quote yourself</button>
+            <p class="tds-small entry-self-note" id="self-note" data-self-note role="status" hidden>Coming soon. For now, start with the assistant: you can fill in or change any answer yourself in Your quote.</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="connection" aria-label="Connection status" data-debug-only hidden>
         <span data-chip="chat">Chat <b>checking</b></span>
         <span data-chip="voice">Voice <b>checking</b></span>
         <span class="quote-ref">Quote reference <b data-quote-id></b></span>
       </p>
     </section>
+
+    <!-- A short screen after Speak or Chat, until AISA's first message (Dylan's handoff). -->
+    <div class="connecting" data-connecting role="status" aria-live="polite" hidden>
+      <span class="tds-loading-spinner tds-loading-spinner--large" aria-hidden="true"></span>
+      <p>Connecting to the AI Sales Assistant…</p>
+    </div>
 
     <section class="messages" data-messages aria-live="polite" aria-relevant="additions"></section>
     <div class="typing" data-typing hidden aria-label="AISA is typing"><span></span><span></span><span></span></div>
@@ -207,15 +239,23 @@
   </aside>
 </div>
 
+<!-- TDS global footer: on the entry screens only; a conversation uses the whole screen. -->
+<footer class="tds-global-footer site-footer" data-site-footer>
+  <div class="tds-global-footer__wrapper">
+    <svg class="tds-global-footer__logo" aria-hidden="true"><use href="#trv-logo-2color-small"></use></svg>
+    <span class="tds-sr-only">Travelers</span>
+    <p class="tds-global-footer__copy tds-x-small">© 2026 The Travelers Indemnity Company. All rights reserved.</p>
+    <p class="tds-global-footer__disclaimer tds-x-small">This site is powered by InsuraMatch, LLC, a Travelers-owned insurance agency, which performs certain sales and fulfillment functions for Travelers.</p>
+    <!-- PLACEHOLDER links, as in the handoff. -->
+    <ul class="tds-global-footer__links" role="list">
+      <li class="tds-global-footer__link-item"><a href="#" class="tds-link">Privacy Policy</a></li>
+      <li class="tds-global-footer__link-item"><a href="#" class="tds-link">Terms &amp; Conditions</a></li>
+      <li class="tds-global-footer__link-item"><a href="#" class="tds-link">Accessibility</a></li>
+    </ul>
+  </div>
+</footer>
+
 <div class="drawer-scrim" data-action="close-quote" hidden></div>
 <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
-<script>
-  // TDS clickable cards: a click anywhere on the card presses its button (TDS JS isn't loaded on this page).
-  document.addEventListener("click", (e) => {
-    const card = e.target.closest("[data-clickable]");
-    if (!card || e.target.closest("button, a")) return;
-    document.querySelector(card.dataset.clickable)?.click();
-  });
-</script>
 </body>
 </html>

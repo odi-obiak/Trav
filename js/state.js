@@ -76,6 +76,8 @@ export function createStore() {
           path: QUOTE_PATH.test(f.path) ? f.path : null,
           edit: readEdit(f.edit),
           entity: ENTITY_PATH.test(f.entity) ? f.entity : null,
+          // A question nobody has answered yet, which the customer can fill in here (2026-10-22).
+          open: f.open === true && !f.value,
         });
       }
       const focus = ui.focus && typeof ui.focus === "object" && stepIds.includes(ui.focus.section)
