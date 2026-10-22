@@ -1,0 +1,11 @@
+{
+  "name": "trav-aisa-page",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "jose": "6.2.13"
+  }
+}

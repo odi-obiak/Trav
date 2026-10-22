@@ -221,9 +221,21 @@ $("[data-start-form]").addEventListener("submit", (e) => {
   zipInput.setAttribute("aria-invalid", String(!ok));
   if (!ok) return zipInput.focus();
   entryZip = zip;
-  $('[data-entry="start"]').hidden = true;
-  $('[data-entry="help"]').hidden = false;
-  $("#help-title").focus({ preventScroll: true });
+  showEntry("help");
+  // A history step, so the browser's Back returns to product and ZIP instead of leaving the page.
+  try { history.pushState({ aisaEntry: "help" }, ""); } catch (err) { /* sandboxed frames can refuse it */ }
+});
+function showEntry(which) {
+  $('[data-entry="start"]').hidden = which !== "start";
+  $('[data-entry="help"]').hidden = which !== "help";
+  if (which === "help") $("#help-title").focus({ preventScroll: true });
+  else $("[data-start-zip]").focus({ preventScroll: true });
+}
+// Back and Forward between the two entry screens. Once the conversation has started, Back changes nothing on the page,
+// so a stray Back never throws the conversation away.
+window.addEventListener("popstate", (e) => {
+  if (document.body.classList.contains("in-conversation")) return;
+  showEntry(e.state && e.state.aisaEntry === "help" ? "help" : "start");
 });
 // "Fill out the quote yourself" is a placeholder for now: there's no form. It says so, and points to the panel, where any
 // answer can be filled in or changed once the conversation has started.

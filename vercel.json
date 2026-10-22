@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/.well-known/poppy.json", "destination": "/api/pap/discovery" },
+    { "source": "/.well-known/oauth-authorization-server", "destination": "/api/pap/discovery?doc=oauth" },
+    { "source": "/api/pap/conversations/:id/:action", "destination": "/api/pap/conversations?id=:id&action=:action" },
+    { "source": "/api/pap/conversations/:id", "destination": "/api/pap/conversations?id=:id" }
+  ],
+  "functions": {
+    "api/pap/conversations.js": { "maxDuration": 60 }
+  }
+}
