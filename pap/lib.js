@@ -118,6 +118,10 @@ async function clientKeys(clientId) {
 
 // 4.1, 4.2: both assertions are short-lived, name the issuer as a single-string `aud`, and have a jti seen only once.
 async function checkAssertion(jwt, keys, { clientId, issuer, subject, error }) {
+  // Section 5: a browser assertion (typ poppy-browser+jwt) is never accepted here. Only a plain JWT, or no typ at all.
+  let typ;
+  try { typ = decodeProtectedHeader(jwt).typ; } catch { typ = undefined; }
+  if (typ !== undefined && String(typ).toLowerCase() !== "jwt") throw new PapError(error === "invalid_client" ? 401 : 400, error, `An assertion with typ ${typ} isn't accepted at the token endpoint`);
   let payload;
   try {
     ({ payload } = await jwtVerify(jwt, keys, { issuer: clientId, algorithms: ["ES256", "RS256"], ...(subject ? { subject } : {}) }));
