@@ -1,9 +1,17 @@
 {
   "rewrites": [
-    { "source": "/.well-known/poppy.json", "destination": "/api/pap/discovery" },
-    { "source": "/.well-known/oauth-authorization-server", "destination": "/api/pap/discovery?doc=oauth" },
     { "source": "/api/pap/conversations/:id/:action", "destination": "/api/pap/conversations?id=:id&action=:action" },
     { "source": "/api/pap/conversations/:id", "destination": "/api/pap/conversations?id=:id" }
+  ],
+  "headers": [
+    { "source": "/.well-known/poppy.json", "headers": [
+      { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+      { "key": "Cache-Control", "value": "public, max-age=300" }
+    ] },
+    { "source": "/.well-known/oauth-authorization-server", "headers": [
+      { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+      { "key": "Cache-Control", "value": "public, max-age=300" }
+    ] }
   ],
   "functions": {
     "api/pap/conversations.js": { "maxDuration": 60 }

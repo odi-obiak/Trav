@@ -1,0 +1,15 @@
+{
+  "protocol_version": "0.2",
+  "organization": {
+    "name": "Travelers (AISA prototype)",
+    "domain": "slm-wine.vercel.app"
+  },
+  "auth": {
+    "issuer": "https://slm-wine.vercel.app"
+  },
+  "agent": {
+    "protocols": [
+      { "type": "poppy", "endpoint": "https://slm-wine.vercel.app/api/pap/conversations" }
+    ]
+  }
+}

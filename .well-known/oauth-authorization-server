@@ -1,0 +1,9 @@
+{
+  "issuer": "https://slm-wine.vercel.app",
+  "token_endpoint": "https://slm-wine.vercel.app/api/pap/token",
+  "revocation_endpoint": "https://slm-wine.vercel.app/api/pap/revoke",
+  "grant_types_supported": ["urn:ietf:params:oauth:grant-type:jwt-bearer"],
+  "token_endpoint_auth_methods_supported": ["private_key_jwt"],
+  "dpop_signing_alg_values_supported": ["ES256"],
+  "poppy_domains": ["slm-wine.vercel.app"]
+}

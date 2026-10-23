@@ -1,5 +1,5 @@
-// Local stand-in for Vercel, for tests and local runs of the PAP functions: applies vercel.json rewrites,
-// parses JSON and form bodies, and gives handlers Vercel's req.query / res.status().json().
+// Local stand-in for Vercel, for tests and local runs of the PAP functions: serves the static .well-known documents,
+// applies vercel.json rewrites, parses JSON and form bodies, and gives handlers Vercel's req.query / res.status().json().
 // Run: PAP_TOKEN_SECRET=... PAP_ALLOWED_CLIENTS=... AISA_REST_URL=... node pap/dev-server.js [port]
 import http from "node:http";
 import { readFileSync } from "node:fs";
@@ -19,9 +19,21 @@ function rewrite(pathname) {
   return pathname;
 }
 
+// The .well-known files name the deployed site. Locally they are served with that origin swapped for the local one
+// (PAP_ORIGIN, or this server's address), so discovery's domain and issuer checks pass against the dev server. The
+// files themselves stay as Vercel serves them.
+const WELL_KNOWN = new Set(["/.well-known/poppy.json", "/.well-known/oauth-authorization-server"]);
+function wellKnown(pathname, req) {
+  const text = readFileSync(join(ROOT, pathname), "utf8");
+  const published = new URL(JSON.parse(readFileSync(join(ROOT, ".well-known/poppy.json"), "utf8")).auth.issuer);
+  const local = new URL((process.env.PAP_ORIGIN || `http://${req.headers.host}`).replace(/\/$/, ""));
+  return text.split(published.origin).join(local.origin).split(published.host).join(local.host);
+}
+
 export function startDevServer(port = 0) {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
+    if (WELL_KNOWN.has(url.pathname)) { res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" }).end(wellKnown(url.pathname, req)); return; }
     const target = new URL(rewrite(url.pathname), "http://localhost");
     url.searchParams.forEach((value, key) => target.searchParams.set(key, value));
     if (!target.pathname.startsWith("/api/")) { res.writeHead(404).end(); return; }
