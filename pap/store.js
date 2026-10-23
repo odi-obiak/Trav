@@ -1,7 +1,7 @@
 // What the PAP gateway has to remember between requests: seen jti values (the token endpoint MUST reject a reused
 // assertion or proof), each conversation's events, its status, whether it's closed, and accepted message ids (a retried
 // message returns the original response).
-// DEMO SHORTCUT: kept in the memory of one server instance. Vercel reuses a warm instance, so with prototype traffic this
+// DEMO Note: kept in the memory of one server instance. Vercel reuses a warm instance, so with prototype traffic this
 // holds, but a cold start forgets it: old cursors then get cursor_expired, and a replay sent to a second instance isn't
 // caught. Production keeps all of this in a store shared by every server, with conversations kept 30 days or more.
 

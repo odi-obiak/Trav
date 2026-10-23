@@ -17,6 +17,9 @@ function joinPiece(prev, next) {
   if (/:\s*$/.test(prev)) return prev + "\n" + next;
   // "(yes or no)" after "- Is this also your mailing address?" belongs to that bullet.
   if (BULLET.test(lastLine)) return /^[(a-z]/.test(next) ? prev + " " + next : prev + "\n" + next;
+  const isQuestion = /\?["')\s]*$/;
+  if (isQuestion.test(lastLine) && !/^[(a-z]/.test(next)) return prev + "\n" + next;
+  if (isQuestion.test(next) && !isQuestion.test(lastLine) && lastLine.length >= 40) return prev + "\n" + next;
   return prev + " " + next;
 }
 
@@ -32,10 +35,7 @@ function inline(line) {
   }
   return out;
 }
-// When the question's parts show as labelled rows of buttons, a bulleted list of the same questions above them is said twice
-// (2026-10-14, Odiche: "Is that also your mailing address?" as a bullet and again as a row). The flow tells AISA to say one
-// summary line; if it lists the questions anyway, the question bullets are left out here and a trailing colon becomes a
-// period. Only "- ...?" lines go: other bullets (a confirmation's details) are kept.
+// When the question's parts show as labelled rows of buttons, a bullets for a confirmation's details are kept.
 function dropQuestionList(text) {
   const lines = String(text).split("\n");
   const kept = lines.filter((l) => !(BULLET.test(l) && /\?\s*(\(.*\))?\s*$/.test(l.trim())));
@@ -72,7 +72,7 @@ export function createTranscript(root, { onChoice }) {
   // Options for the question AISA is asking now (aisa_ui.choices). They stay under AISA's latest message while its reply
   // streams in, and go away once the customer answers (a tap or a typed reply) or the flow moves on.
   let offered = null;
-  // What was said, kept in memory for the channel switch (Step 7): the other channel gets the last few turns so AISA
+  // What was said, kept in memory for the channel switch: the other channel gets the last few turns so AISA
   // can carry on mid-thought. Never stored on the device.
   const history = [];
 
@@ -180,13 +180,13 @@ export function createTranscript(root, { onChoice }) {
     list.append(lastChoices);
   }
   // The flow's line under the buttons (set.hint), e.g. "Not sure? That's fine, just say so." on a call, where AISA no longer
-  // says the options or "not sure" out loud (2026-10-21).
+  // says the options or "not sure" out loud.
   function hintLine(set) {
     return set && set.hint ? [el("span", { class: "choices-hint" }, set.hint)] : [];
   }
 
-  // The buttons wait for AISA's reply (2026-10-12, Odiche: they showed up before the question). The flow sends them just
-  // before the AI Agent speaks, so they are drawn when AISA's reply for this turn arrives (add() calls showOffered), or
+  // The buttons wait for AISA's reply . The flow sends them just
+  // before the agent speaks, so they are drawn when AISA's reply for this turn arrives (add() calls showOffered), or
   // after a short wait if no reply comes, so they never go missing.
   let lastUserAt = 0;
   let lastBotAt = 0;

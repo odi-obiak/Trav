@@ -25,12 +25,7 @@ const entry = {
   source: params.get("utm_source") || CONFIG.defaultOffer.source,
   landedAt: new Date().toISOString(),
   // This page shows aisa_ui.choices as buttons, so the flow can stop naming every option in AISA's text (and on a call,
-  // point to the screen instead of reading a list). An older page leaves this out and keeps the spoken or typed options.
-  // multiChoices: tick boxes for "select all that apply"; rowChoices: a row of buttons per part of a grouped question (2026-10-11)
-  // disclosureShown: this page shows the AI-assistant and recording note under the input, so the welcome can leave it
-  // out (2026-10-14, Sascha's review). A UI that doesn't show it leaves this out and the welcome keeps the disclosure.
-  // uploadNoteShown: this page always shows "Add a document any time" under the input, so the chat welcome leaves out
-  // its upload line (2026-10-14, Odiche). The document offer after the address is unchanged.
+  // point to the screen instead of reading a list). The document offer after the address is unchanged.
   ui: { choices: true, multiChoices: true, rowChoices: true, disclosureShown: true, uploadNoteShown: true },
 };
 
@@ -64,8 +59,7 @@ const transcript = createTranscript($("[data-conversation]"), {
   onChoice: (c) => sendText(c.title, c.payload),
 });
 
-// ---- Uploads open only after AISA's first message (2026-10-16, Odiche): the customer meets AISA (Once > On First Time,
-// the welcome) before a document can be shared. Until then the paperclip is disabled, the upload note is hidden and a
+// ---- Uploads open only after AISA's first message, Until then the paperclip is disabled, the upload note is hidden and a
 // dropped file is ignored. Any AISA message on either channel opens them, and a resumed session gets its welcome too.
 let aisaHasSpoken = false;
 function allowUploads() {
@@ -94,9 +88,8 @@ const chat = createChat({
   onTyping: (on) => transcript.typing(on),
 });
 
-// ---- Session timer (demo only, 2026-10-12): in the demo bar, from the first message until the handover to an advisor,
-// across chat and calls, so a full quote can be measured. Shows the customer's turns (anything they typed, said or
-// tapped), time on calls, and when the quote was ready. Stops at the handover; a page reload starts it again.
+// ---- Session timer: in the demo bar, from the first message until the handover to an advisor,
+// across chat and calls, so a full quote can be measured. 
 const session = { started: 0, stopped: 0, callMs: 0, callFrom: 0, readyAt: 0, timer: null };
 const sinceStart = (t) => formatClock(Math.floor(((t || Date.now()) - session.started) / 1000));
 function renderSessionTimer() {
@@ -207,8 +200,8 @@ const voice = createVoice({
   },
 });
 
-// ---- Entry (2026-10-22, Dylan's TIDAS handoff): product and ZIP, then the card with three ways in.
-// DEMO SHORTCUT: the ZIP stays on the page. It isn't sent to Cognigy, so AISA still asks the full address; production would
+//  product and ZIP, then the card with three ways in.
+// DEMO Note: the ZIP stays on the page. It isn't sent to Cognigy, so AISA still asks the full address; production would
 // pass it with the entry and save it as the customer's answer.
 let entryZip = "";
 $("[data-start-form]").addEventListener("submit", (e) => {
@@ -369,7 +362,7 @@ async function requestUpload() {
   return sendEvent(CONFIG.uploadText, { aisa_event: { type: "upload_requested", quoteId } });
 }
 
-// ---- Upload button (2026-10-11): the one labelled way to share a document, in chat and during a call. It shows what is
+// ---- Upload button: the one labelled way to share a document, in chat and during a call. It shows what is
 // happening (opening the screen, uploading, reading), how many documents were read, and draws the eye once when AISA
 // offers the upload (aisa_ui.documents.offer). The phases are page-side only and always time out, so the button can
 // never stay stuck if an update is lost.

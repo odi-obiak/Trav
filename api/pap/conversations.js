@@ -1,4 +1,4 @@
-// PAP conversations (spec section 7): the personal agent talks to AISA (the Company Agent) for its User.
+// PAP conversations: the personal agent talks to AISA (the Company Agent) for its User.
 //   POST /api/pap/conversations                 start, with the first message                       201
 //   POST /api/pap/conversations/{id}/messages   another message                                     202
 //   GET  /api/pap/conversations/{id}/events     read events after a cursor
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     if (!id) {
       if (req.method !== "POST") throw new PapError(405, "invalid_request", "POST to start a conversation");
       const body = bodyOf(req);
-      // 7.10. DEMO SHORTCUT: this prototype doesn't offer Direct Conversations.
+      // 7.10. DEMO Note: this prototype doesn't offer Direct Conversations.
       if (body.parent_conversation_id !== undefined) throw new PapError(400, "invalid_request", "Direct Conversations aren't offered by this prototype");
       const message = checkMessage(body.message);
       const retried = retry(owner, message);
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     }
 
     const { quoteId } = ownedConversation(session, id);
-    // DEMO SHORTCUT: after a cold start the events are gone (see pap/store.js); the conversation still works.
+    // DEMO Note: after a cold start the events are gone; the conversation still works.
     const conv = conversation(id, req.method === "POST" && action !== "close");
 
     if (action === "events" && req.method === "GET") {
@@ -84,7 +84,7 @@ export default async function handler(req, res) {
       if (conv.status === "queued" || conv.responder === "human") return res.status(202).json(summary(id, conv));
       setState(conv, "queued", "agent");
       // AISA's "Talk to a person" path. Transfers are off in this build, so no one joins: the status goes back to idle
-      // and the Company Agent says why (7.9). DEMO SHORTCUT: production transfers to a licensed advisor.
+      // and the Company Agent says why (7.9). DEMO Note: production transfers to a licensed advisor.
       const reply = await callAisa(quoteId, "", { aisa_action: "live_agent", pap: { sender: "agent" } });
       addCompanyMessage(conv, reply);
       noOneAvailable(conv);

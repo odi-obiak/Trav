@@ -130,6 +130,8 @@ body:not(.in-conversation) .messages, body:not(.in-conversation) .composer { dis
 /* No name, avatar or "spoken" tag on messages (2026-10-14, Sascha): only AISA and the customer are here; who said what is
    clear from the layout. Screen readers get a hidden "AISA:" or "You:" (transcript.js). */
 .msg-text { margin: 0; font-size: 1rem; line-height: 1.6; white-space: pre-wrap; }
+/* A small gap between paragraphs of one reply (lead-in, question, VIN offer), so they read as separate lines (2026-10-23). */
+.msg-text + .msg-text { margin-top: 0.5em; }
 /* TDS Chat Message (Figma 8.8.0): the plain variant fills its container, so cap it at a comfortable measure (~66 characters; average text is about half an em wide, `ch` is wider). */
 .msg-bot .msg-body { max-width: 34em; }
 /* AISA's avatar: the Travelers umbrella beside its messages, once per run of messages (2026-10-14). */
